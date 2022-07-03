@@ -10,7 +10,7 @@ static char* read_file(const char* path)
 	if (file == NULL)
 	{
 		fprintf(stderr, "failed to open file %s", path);
-		exit(74);
+		exit(EXIT_FAILURE);
 	}
 	fseek(file, 0L, SEEK_END);
 	size_t const size = ftell(file);
