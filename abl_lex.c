@@ -9,10 +9,46 @@ void init_lexer(lexer* lex, const char* src)
 	lex->line = 1;
 }
 
-static token make_token(token_type type)
+static token make_token(lex, lexer* lex, token_type type)
 {
 	token tk;
 	tk.type = type;
+	tk.start = lex->start;
+	tk.length = (int)(lex->current - lex.start);
+	return tk;
+}
+
+static bool is_at_end(lexer* lex)
+{
+	return *lex->current == '\0';
+}
+
+static void skip_whitespace(lexer* lex) 
+{
+	while (1)
+	{
+		switch (*lex->current)
+		{
+			case '\n':
+			   lex->line++;	
+			case ' ':
+			case '\t': 
+			case '\r': 
+			   lex->current++;
+			break;
+			// also skip comments here
+			case '/':
+				if (*(lex->current+1) == '/' )
+				{
+					while (*lex->current != '\n' && !is_at_end(lex))
+						lex->current++;
+				}
+				else
+					return;
+			default: 
+				return;
+		}
+	}
 }
 
 static const char* get_keyword_str_from_type(token_type t)
@@ -37,11 +73,6 @@ static token_type check_keyword(lexer* lex, int start, int len, const char* rest
 	if (lex->current - lex->start == start + len && memcmp(lex->start + start, rest, len) == 0)
 		return type;
 	return TK_IDENTIFIER;
-}
-
-static bool is_at_end(lexer* lex)
-{
-	return *lex->current == '\0';
 }
 
 static bool match(lexer* lex, char expected)
@@ -82,6 +113,51 @@ static token_type get_word_token_type(lexer* lex)
 		case 'n': return check_keyword(lex, 1, 3, "ull", TK_NULL);
 		case 't': return check_keyword(lex, 1, 3, "rue", TK_TRUE);
 	}
+	return TK_IDENTIFIER;
+}
+
+static token lex_string(lexer* lex)
+{
+	while (*lex->current != '"' && !is_at_end())
+	{
+		if (*lex->current == '\n') 
+			lex->line++;
+		lex->current++;
+	}
+	if (is_at_end(lex))
+	{
+		// TODO error handling
+		ABL_ASSERT(false);
+	}
+
+	return make_token(lex, TK_STRING);
+}
+
+static token lex_num(lexer* lex)
+{
+	while (isdigit(*lex->current))
+		lex->current++;
+	
+	bool is_float = false;
+	if (*lex->current == '.')
+	{
+		is_float = true;
+		lex->current++;
+		while (isdigit(*lex->current))
+			lex->current++;
+	}
+
+	return is_float ? make_token(lex, TK_FLOAT) : make_token(lex, TK_INT);
+}
+
+static token lex_identifier_or_keyword(lexer* lex)
+{
+	const char* start = lex->current;
+	lex->current++;
+	while(isalnum(*lex->current) || *lex->current == '_')
+		lex->current++;
+
+	return make_token(lex, get_word_token_type(lex));
 }
 
 token lex_token(lexer* lex)
@@ -89,42 +165,31 @@ token lex_token(lexer* lex)
 	ABL_ASSERT(lex);
 	
 	if(*lex->current == '\0')
-		return make_token(TK_EOF);
+		return make_token(lex, TK_EOF);
 
 	switch(*lex->current) {
-		case '(': return make_token(TK_OPEN_PAREN);
-		case ')': return make_token(TK_CLOSE_PAREN);
-		case '{': return make_token(TK_OPEN_BRACE);
-		case '}': return make_token(TK_CLOSE_BRACE);
-		case ';': return make_token(TK_SEMICOLON);
-		case ',': return make_token(TK_COMMA);
-		case '.': return make_token(TK_DOT);
-		case ':': return make_token(TK_DOUBLE_DOT);
-		case '-': return make_token(TK_MINUS);
-		case '+': return make_token(TK_PLUS);
-		case '/': return make_token(TK_SLASH);
-		case '*': return make_token(TK_STAR);
-		case '!': return make_token(match(lex, '=') ? TK_NOT_EQUAL : TK_NOT); 
-		case '=': return make_token(match(lex, '=') ? TK_EQUAL_EQUAL : TK_EQUAL); 
-		case '<': return make_token(match(lex, '=') ? TK_LESS_EQUAL : TK_LESS); 
-		case '>': return make_token(match(lex, '=') ? TK_GREATER_EQUAL : TK_GREATER); 
+		case '(': return make_token(lex, TK_OPEN_PAREN);
+		case ')': return make_token(lex, TK_CLOSE_PAREN);
+		case '{': return make_token(lex, TK_OPEN_BRACE);
+		case '}': return make_token(lex, TK_CLOSE_BRACE);
+		case ';': return make_token(lex, TK_SEMICOLON);
+		case ',': return make_token(lex, TK_COMMA);
+		case '.': return make_token(lex, TK_DOT);
+		case ':': return make_token(lex, TK_DOUBLE_DOT);
+		case '-': return make_token(lex, TK_MINUS);
+		case '+': return make_token(lex, TK_PLUS);
+		case '/': return make_token(lex, TK_SLASH);
+		case '*': return make_token(lex, TK_STAR);
+		case '!': return make_token(lex, match(lex, '=') ? TK_NOT_EQUAL : TK_NOT); 
+		case '=': return make_token(lex, match(lex, '=') ? TK_EQUAL_EQUAL : TK_EQUAL); 
+		case '<': return make_token(lex, match(lex, '=') ? TK_LESS_EQUAL : TK_LESS); 
+		case '>': return make_token(lex, match(lex, '=') ? TK_GREATER_EQUAL : TK_GREATER); 
 	}
 	
 	// identifiers or keywords
 	if (isalpha(*lex->current) || *lex->current == '_')
 	{
-		const char* start = lex->current;
-		lex->current++;
-		while(isalnum(*lex->current) || *lex->current == '_')
-		{
-			lex->current++;
-		}
-
-		token id = make_token(TK_IDENTIFIER);
-		unsigned const len = lex->current - start;
-		tk.sem_info.str	= (char*)ABL_MALLOC((len+1) * sizeof(char))
-		strncpy(tk.sem_info.str, start, len);
-		tk.sem_info.str[len] = '\0';
+		return lex_identifier_or_keyword(lex);	
 	}
 }
 

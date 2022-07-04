@@ -27,15 +27,9 @@ typedef enum token_type {
 	TK_EOF
 } token_type;
 
-typedef union {
-	abl_float f;
-	abl_int i;
-	const char* str;
-} semantic_info;
-
 typedef struct token {
 	token_type type;
-	semantic_info sem_info;
+	int start, length; // view on the source
 } token;
 
 typedef struct lexer {
