@@ -18,4 +18,7 @@ typedef int abl_int;
 #define ABL_MALLOC(x) malloc(x)
 #define ABL_FREE(x) free(x)
 
+	#include <stdio.h>
+	#define ABL_DEBUG_DIAGNOSTIC(fmt, ...) fprintf(stderr, fmt, __VA_ARGS__)
+
 #endif

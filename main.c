@@ -16,6 +16,7 @@ static char* read_file(const char* path)
 	size_t const size = ftell(file);
 	rewind(file);
 	char* buffer = (char*)malloc(size + 1);
+	fread(buffer, sizeof(char), size, file);
 	buffer[size] = '\0';
 	fclose(file);
 	return buffer;
@@ -26,26 +27,40 @@ static void repl()
 	char line[1024];
 	while (1)
 	{
-		puts("> ");
+		printf("> ");
 		if (!fgets(line, sizeof(line), stdin)) {
 			puts("");
 			break;
 		}
+		lexer lex;
+		init_lexer(&lex, line);
+		token tk;
+		do {
+			tk = lex_token(&lex);
+			printf("tk : %d\n", tk.type);
+		}
+		while (tk.type != TK_EOF);
 	}
 }
 
 int main(int argc, char** argv)
 {
-	return 0;
 	if (argc == 1) 
 	{
 		repl();
 	} 
 	else if (argc == 2)
 	{
-		char* src = read_file(argv[1]);	
+		char* src = read_file(argv[1]);
+		lexer lex;
+		init_lexer(&lex, src);
+		token tk;
+		do {
+			tk = lex_token(&lex);
+			printf("tk : %d\n", tk.type);
+		}
+		while (tk.type != TK_EOF);
 		free(src);
 	}
-
 	return 0;
 }

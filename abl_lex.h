@@ -4,7 +4,7 @@
 #include "abl_core.h"
 
 typedef enum token_type {
-
+	TK_ERR,
 	// operators and specials
 	TK_OPEN_PAREN, TK_CLOSE_PAREN,
 	TK_OPEN_BRACE, TK_CLOSE_BRACE,

@@ -1,5 +1,5 @@
 #include "abl_lex.h"
-#include <cctype.h>
+#include <ctype.h>
 
 void init_lexer(lexer* lex, const char* src)
 {
@@ -9,12 +9,12 @@ void init_lexer(lexer* lex, const char* src)
 	lex->line = 1;
 }
 
-static token make_token(lex, lexer* lex, token_type type)
+static token make_token(lexer* lex, token_type type)
 {
 	token tk;
 	tk.type = type;
 	tk.start = lex->start;
-	tk.length = (int)(lex->current - lex.start);
+	tk.length = (int)(lex->current - lex->start);
 	return tk;
 }
 
@@ -118,7 +118,7 @@ static token_type get_word_token_type(lexer* lex)
 
 static token lex_string(lexer* lex)
 {
-	while (*lex->current != '"' && !is_at_end())
+	while (*lex->current != '"' && !is_at_end(lex))
 	{
 		if (*lex->current == '\n') 
 			lex->line++;
@@ -127,9 +127,10 @@ static token lex_string(lexer* lex)
 	if (is_at_end(lex))
 	{
 		// TODO error handling
+		ABL_DEBUG_DIAGNOSTIC("lexer error : lexing string line %d\n", lex->line);
 		ABL_ASSERT(false);
 	}
-
+	lex->current++; // pass the second '"'
 	return make_token(lex, TK_STRING);
 }
 
@@ -164,10 +165,13 @@ token lex_token(lexer* lex)
 {
 	ABL_ASSERT(lex);
 	
+	skip_whitespace(lex);
 	if(*lex->current == '\0')
 		return make_token(lex, TK_EOF);
 
-	switch(*lex->current) {
+	char const c = *lex->current++;
+	printf("current char %c\n", c);
+	switch(c) {
 		case '(': return make_token(lex, TK_OPEN_PAREN);
 		case ')': return make_token(lex, TK_CLOSE_PAREN);
 		case '{': return make_token(lex, TK_OPEN_BRACE);
@@ -180,16 +184,22 @@ token lex_token(lexer* lex)
 		case '+': return make_token(lex, TK_PLUS);
 		case '/': return make_token(lex, TK_SLASH);
 		case '*': return make_token(lex, TK_STAR);
+		case '"': return lex_string(lex);
 		case '!': return make_token(lex, match(lex, '=') ? TK_NOT_EQUAL : TK_NOT); 
 		case '=': return make_token(lex, match(lex, '=') ? TK_EQUAL_EQUAL : TK_EQUAL); 
 		case '<': return make_token(lex, match(lex, '=') ? TK_LESS_EQUAL : TK_LESS); 
 		case '>': return make_token(lex, match(lex, '=') ? TK_GREATER_EQUAL : TK_GREATER); 
 	}
-	
+
+	if (isdigit(c))
+		return lex_num(lex);
+
 	// identifiers or keywords
-	if (isalpha(*lex->current) || *lex->current == '_')
+	if (isalpha(c) || c == '_')
 	{
 		return lex_identifier_or_keyword(lex);	
 	}
+
+	return make_token(lex, TK_ERR);
 }
 

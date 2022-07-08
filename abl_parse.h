@@ -48,10 +48,10 @@ typedef struct fn_decl
 typedef struct var_decl 
 {
 	const char* name;
-	expr expression;
+//	expr expression;
 } var_decl;
 
-typdef enum decl_type
+typedef enum decl_type
 {
 	DECL_FN,
 	DECL_VAR,
@@ -62,7 +62,7 @@ typedef struct decl {
 	fn_decl fn;
 	var_decl var;
 	} d;
-	decl_type;
+	decl_type type;
 } decl;
 
 decl parse_decl(parser* p);

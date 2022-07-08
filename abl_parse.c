@@ -4,5 +4,4 @@
 decl parse_decl(parser* p)
 {
 	ABL_ASSERT(p);
-	if (parser->lex->)	
 }
