@@ -29,6 +29,7 @@
 typedef struct parser
 {
 	lexer lex;
+	token current;
 } parser;
 
 typedef struct block_stmt

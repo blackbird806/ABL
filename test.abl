@@ -1,0 +1,8 @@
+import "stdio"
+
+if (a == 2) {
+	
+}
+
+int a = 5;
+

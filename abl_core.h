@@ -16,6 +16,7 @@ typedef int abl_int;
 
 #include <stdlib.h>
 #define ABL_MALLOC(x) malloc(x)
+#define ABL_REALLOC(x, s) realloc(x, s)
 #define ABL_FREE(x) free(x)
 
 	#include <stdio.h>
