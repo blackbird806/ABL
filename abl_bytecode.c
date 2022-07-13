@@ -30,3 +30,32 @@ void destroy_chunk(bytecode_chunk* c)
 	ABL_FREE(c->code);
 	c->code = NULL;
 }
+
+void disassemble_chunk(bytecode_chunk* c, FILE* out)
+{
+	ABL_ASSERT(c);
+	ABL_ASSERT(out);
+	
+	for (int off = 0; off < chunk->size;)
+	{
+		off = disassemble_instruction(c, out, off);
+	}
+}
+
+static int simple_instruction(const char* c, FILE* out, int offset)
+{
+	fprintf(out, "%s\n", c);
+	return offset + 1;
+}
+
+const char* disassemble_instruction(bytecode_chunk* c, FILE* out, int offset)
+{
+	fprintf(out, "%04d ", offset);
+	uint8_t instruction = chunk->code[offset];
+	switch (instruction)
+	{
+		case OP_NOP: return simple_instruction("NOP", offset);
+		case OP_RETURN: return simple_instruction("RETURN", offset);
+		case OP_CONSTANT: 
+	}
+}

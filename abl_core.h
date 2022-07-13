@@ -2,6 +2,7 @@
 #define ABL_CORE_H
 
 #include <stdbool.h>
+#include <stdint.h>
 
 // TODO: rename abl_config ?
 // you modify here the typedefs and macro to configure the lang/impl as you need

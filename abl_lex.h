@@ -30,6 +30,7 @@ typedef enum token_type {
 typedef struct token {
 	token_type type;
 	int start, length; // view on the source
+	int line;
 } token;
 
 typedef struct lexer {

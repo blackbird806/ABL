@@ -15,6 +15,7 @@ static token make_token(lexer* lex, token_type type)
 	tk.type = type;
 	tk.start = lex->start;
 	tk.length = (int)(lex->current - lex->start);
+	tk.line = lex->line;
 	return tk;
 }
 
