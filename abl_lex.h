@@ -27,6 +27,8 @@ typedef enum token_type {
 	TK_EOF
 } token_type;
 
+const char* token_type_to_string(token_type t);
+
 typedef struct token {
 	token_type type;
 	int start, length; // view on the source

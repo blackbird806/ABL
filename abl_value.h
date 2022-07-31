@@ -26,4 +26,8 @@ typedef struct abl_value_array {
 	abl_value* values;
 } abl_value_array;
 
+void abl_value_array_init(abl_value_array* arr);
+void abl_value_array_add(abl_value_array* arr, abl_value val);
+void abl_value_array_destroy(abl_value_array* arr);
+
 #endif

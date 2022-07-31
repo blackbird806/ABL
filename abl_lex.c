@@ -1,6 +1,56 @@
 #include "abl_lex.h"
 #include <ctype.h>
 
+const char* token_type_to_string(token_type t)
+{
+#define TK_STR(T) [T] = #T
+	static const char* str_values[]	= {
+		TK_STR(TK_ERR),
+		TK_STR(TK_OPEN_PAREN),
+		TK_STR(TK_CLOSE_PAREN),
+		TK_STR(TK_OPEN_BRACE),
+		TK_STR(TK_CLOSE_BRACE),
+		TK_STR(TK_OPEN_BRACKET),
+		TK_STR(TK_CLOSE_BRACKET),
+		TK_STR(TK_COMMA),
+		TK_STR(TK_SEMICOLON),
+		TK_STR(TK_MINUS),
+		TK_STR(TK_PLUS),
+		TK_STR(TK_STAR),
+		TK_STR(TK_DOT),
+		TK_STR(TK_DOUBLE_DOT),
+		TK_STR(TK_NOT),
+		TK_STR(TK_SLASH),
+		TK_STR(TK_EQUAL),
+		TK_STR(TK_NOT_EQUAL),
+		TK_STR(TK_EQUAL_EQUAL),
+		TK_STR(TK_AND),
+		TK_STR(TK_AND_AND),
+		TK_STR(TK_OR),
+		TK_STR(TK_OR_OR),
+		TK_STR(TK_LESS),
+		TK_STR(TK_GREATER),
+		TK_STR(TK_LESS_EQUAL),
+		TK_STR(TK_GREATER_EQUAL),
+		TK_STR(TK_IDENTIFIER),
+		TK_STR(TK_STRING),
+		TK_STR(TK_INT),
+		TK_STR(TK_FLOAT),
+		TK_STR(TK_BOOL),
+		TK_STR(TK_FN),
+		TK_STR(TK_IF),
+		TK_STR(TK_WHILE),
+		TK_STR(TK_FOR),
+		TK_STR(TK_TRUE),
+		TK_STR(TK_FALSE),
+		TK_STR(TK_NULL),
+		TK_STR(TK_IMPORT),
+		TK_STR(TK_EOF),
+	};
+	ABL_ASSERT((int)t < ABL_ARRAY_SIZE(str_values));
+	return str_values[(int)t];
+}
+
 void init_lexer(lexer* lex, const char* src)
 {
 	ABL_ASSERT(lex);

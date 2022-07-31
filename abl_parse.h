@@ -30,6 +30,8 @@ typedef struct parser
 {
 	lexer lex;
 	token current;
+
+	bool had_error;
 } parser;
 
 typedef struct block_stmt
@@ -66,6 +68,5 @@ typedef struct decl {
 	decl_type type;
 } decl;
 
-decl parse_decl(parser* p);
 
 #endif

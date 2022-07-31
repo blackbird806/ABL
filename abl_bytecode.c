@@ -48,14 +48,38 @@ static int simple_instruction(const char* c, FILE* out, int offset)
 	return offset + 1;
 }
 
-const char* disassemble_instruction(bytecode_chunk* c, FILE* out, int offset)
+static int constant_instruction(bytecode_chunk* chunk, FILE* out, int offset)
 {
+	fprintf(out, "CONSTANT ");
+	value_type const type = chunk->code[++offset];
+	switch(type)
+	{
+		case VAL_BOOL: 
+			fprintf(out, "BOOL %s\n", chunk->code[offset] == 0 ? "FALSE" : "TRUE");
+			offset++;
+			break;
+		case VAL_INT:
+			// fprintf(out, "INT %d\n", chunk->);
+	}
+	return offset;
+}
+
+int disassemble_instruction(bytecode_chunk* c, FILE* out, int offset)
+{
+	#define SIMPLE_INSTRUCTION(name) case OP_##name : return simple_instruction(#name, out, offset)
+
 	fprintf(out, "%04d ", offset);
-	uint8_t instruction = chunk->code[offset];
+	uint8_t instruction = c->code[offset];
 	switch (instruction)
 	{
-		case OP_NOP: return simple_instruction("NOP", offset);
-		case OP_RETURN: return simple_instruction("RETURN", offset);
-		case OP_CONSTANT: 
+		SIMPLE_INSTRUCTION(NOP);
+		SIMPLE_INSTRUCTION(ADD);
+		SIMPLE_INSTRUCTION(SUB);
+		SIMPLE_INSTRUCTION(RET);
+		SIMPLE_INSTRUCTION(MUL);
+		SIMPLE_INSTRUCTION(DIV);
+		case OP_CONST:
 	}
 }
+
+

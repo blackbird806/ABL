@@ -11,6 +11,8 @@
 typedef float abl_float;
 typedef int abl_int;
 
+#define ABL_ARRAY_SIZE(a) (sizeof(a) / sizeof(a[0])) 
+
 // c functions
 #include <assert.h>
 #define ABL_ASSERT(x) assert(x)
@@ -22,5 +24,6 @@ typedef int abl_int;
 
 	#include <stdio.h>
 	#define ABL_DEBUG_DIAGNOSTIC(fmt, ...) fprintf(stderr, fmt, __VA_ARGS__)
+	#define ABL_DEBUG_VDIAGNOSTIC(fmt, args) vfprintf(stderr, fmt, args)
 
 #endif
