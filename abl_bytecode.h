@@ -21,6 +21,7 @@ typedef struct {
 
 void init_chunk(bytecode_chunk* c);
 void write_chunk(bytecode_chunk* c, uint8_t byte);
+void write4_chunk(bytecode_chunk* c, uint32_t bytes);
 void destroy_chunk(bytecode_chunk* c);
 
 void disassemble_chunk(bytecode_chunk* c, FILE* outstream);

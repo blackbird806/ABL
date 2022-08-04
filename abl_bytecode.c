@@ -24,6 +24,16 @@ void write_chunk(bytecode_chunk* c, uint8_t byte)
 	c->code[c->size++] = byte;
 }
 
+void write4_chunk(bytecode_chunk* c, uint32_t bytes)
+{
+	ABL_ASSERT(c);
+	if (c->size + sizeof(bytes) > c->capacity)
+		grow_chunk(c);
+	
+	*(uint32_t*)(&c->code[c->size]) = bytes;
+	c->size += sizeof(bytes);
+}
+
 void destroy_chunk(bytecode_chunk* c)
 {
 	ABL_ASSERT(c);

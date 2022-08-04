@@ -37,8 +37,8 @@ static void emit_constant(compiler* c, abl_value val)
 
 static token advance(compiler* c)
 {
-	current = lex_token(&c->lex);
-	return current;
+	c->current = lex_token(&c->lex);
+	return c->current;
 }
 
 static void consume(compiler* c, token_type t)
@@ -60,9 +60,24 @@ static void unary(compiler* c)
 	
 }
 
+static void primary(compiler* c)
+{
+	switch(c->current.type)
+	{
+		case TK_INT:
+			write_chunk(c->out, OP_PUSH);
+			write4_chunk(c->out, token_as_int(&c->lex, c->current));
+	}
+}
+
+static void assignement(compiler* c)
+{
+	
+}
+
 static void expression(compiler* c) 
 {
-
+	
 }
 
 

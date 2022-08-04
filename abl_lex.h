@@ -44,4 +44,6 @@ typedef struct lexer {
 void init_lexer(lexer* lex, const char* src);
 token lex_token(lexer* lex);
 
+abl_int token_as_int(lexer* l, token t);
+
 #endif

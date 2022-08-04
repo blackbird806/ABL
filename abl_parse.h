@@ -20,8 +20,8 @@
  *	return ::= "return" expr ";"
  *	block ::= "{" decl* "}"
  *
- *	expr ::= assignement
- *	assignement ::= IDENTIFIER "=" 
+ *	expr ::= assignement | primary
+ *	assignement ::= IDENTIFIER "=" expr 
  *	primary ::= "true" | "false" | "null" | NUMBER | STRING | IDENTIFIER
  *	
  * */

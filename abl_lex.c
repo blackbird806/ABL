@@ -51,6 +51,11 @@ const char* token_type_to_string(token_type t)
 	return str_values[(int)t];
 }
 
+abl_int token_as_int(lexer* lex, token t)
+{
+	return (abl_int)strtol(lex->start + t.start, lex->start + t.end, 10);
+}
+
 void init_lexer(lexer* lex, const char* src)
 {
 	ABL_ASSERT(lex);
