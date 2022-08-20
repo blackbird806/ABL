@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "abl.h"
+#include "abl_compiler.h"
 
 static char* read_file(const char* path) 
 {
@@ -16,6 +17,7 @@ static char* read_file(const char* path)
 	size_t const size = ftell(file);
 	rewind(file);
 	char* buffer = (char*)malloc(size + 1);
+	assert(buffer != NULL);
 	fread(buffer, sizeof(char), size, file);
 	buffer[size] = '\0';
 	fclose(file);
@@ -45,21 +47,15 @@ static void repl()
 
 int main(int argc, char** argv)
 {
-	if (argc == 1) 
+	//if (argc == 1)
+	//{
+	//	repl();
+	//} 
+	//else if (argc == 2)
 	{
-		repl();
-	} 
-	else if (argc == 2)
-	{
-		char* src = read_file(argv[1]);
-		lexer lex;
-		init_lexer(&lex, src);
-		token tk;
-		do {
-			tk = lex_token(&lex);
-			printf("tk : %d\n", tk.type);
-		}
-		while (tk.type != TK_EOF);
+		//char* src = read_file(argv[1]);
+		char* src = read_file("test.abl");
+		compile(src, stdout);
 		free(src);
 	}
 	return 0;

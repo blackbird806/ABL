@@ -10,6 +10,7 @@
 // float and int types carried by ABL values
 typedef float abl_float;
 typedef int abl_int;
+typedef bool abl_bool;
 
 #define ABL_ARRAY_SIZE(a) (sizeof(a) / sizeof(a[0])) 
 

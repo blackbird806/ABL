@@ -3,6 +3,7 @@
 
 #include "abl_lex.h"
 #include "abl_bytecode.h"
+#include "abl_value.h"
 
 // one pass compiler
 
@@ -15,5 +16,7 @@ typedef struct compiler
 	abl_value_array constants;
 	bool had_error;
 } compiler;
+
+void compile(const char* src, FILE* out);
 
 #endif

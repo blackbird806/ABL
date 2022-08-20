@@ -14,11 +14,15 @@ typedef enum {
 typedef struct abl_value {
 	value_type type;
 	union { 
-		bool b;
-		float f;
-		int i;
+		abl_bool b;
+		abl_float f;
+		abl_int i;
 	} v;
 } abl_value;
+
+abl_value make_int(abl_int val);
+abl_value make_float(abl_float val);
+abl_value make_bool(bool val);
 
 typedef struct abl_value_array {
 	int capacity;

@@ -20,8 +20,8 @@ typedef enum token_type {
 	TK_STRING, TK_INT, TK_FLOAT, TK_BOOL,
 
 	// keywords
-	TK_FN, TK_IF, TK_WHILE, TK_FOR, TK_TRUE, TK_FALSE,
-	TK_NULL, TK_IMPORT,
+	TK_FN, TK_IF, TK_ELSE, TK_WHILE, TK_FOR, TK_TRUE, TK_FALSE,
+	TK_NULL, TK_IMPORT, TK_RETURN,
 
 	//
 	TK_EOF
@@ -36,6 +36,7 @@ typedef struct token {
 } token;
 
 typedef struct lexer {
+	const char* src;
 	const char* start;
 	const char* current;
 	int line;
@@ -45,5 +46,6 @@ void init_lexer(lexer* lex, const char* src);
 token lex_token(lexer* lex);
 
 abl_int token_as_int(lexer* l, token t);
+abl_bool token_as_bool(lexer* lex, token t);
 
 #endif

@@ -1,5 +1,20 @@
 #include "abl_value.h"
 
+abl_value make_int(abl_int val)
+{
+	return (abl_value) { VAL_INT, { .i = val } };
+}
+
+abl_value make_float(abl_float val)
+{
+	return (abl_value) { VAL_FLOAT, { .f = val } };
+}
+
+abl_value make_bool(bool val)
+{
+	return (abl_value) { VAL_BOOL, { .b = val } };
+}
+
 void abl_value_array_init(abl_value_array* arr)
 {
 	ABL_ASSERT(arr);
@@ -10,8 +25,8 @@ void abl_value_array_init(abl_value_array* arr)
 
 static void grow_value_array(abl_value_array* arr)
 {
-	arr->capacity = arr->capacity > 8 ? 8 : arr->capacity > 2;
-	arr->code = (uint8_t*)ABL_REALLOC(c->values, arr->capacity);
+	arr->capacity = arr->capacity < 8 ? 8 : arr->capacity * 2;
+	arr->values = ABL_REALLOC(arr->values, arr->capacity);
 	ABL_ASSERT(arr->values); // @Review we may want to handle failed alloc in another way
 }
 

@@ -1,5 +1,6 @@
 #include "abl_lex.h"
 #include <ctype.h>
+#include <string.h>
 
 const char* token_type_to_string(token_type t)
 {
@@ -39,12 +40,14 @@ const char* token_type_to_string(token_type t)
 		TK_STR(TK_BOOL),
 		TK_STR(TK_FN),
 		TK_STR(TK_IF),
+		TK_STR(TK_ELSE),
 		TK_STR(TK_WHILE),
 		TK_STR(TK_FOR),
 		TK_STR(TK_TRUE),
 		TK_STR(TK_FALSE),
 		TK_STR(TK_NULL),
 		TK_STR(TK_IMPORT),
+		TK_STR(TK_RETURN),
 		TK_STR(TK_EOF),
 	};
 	ABL_ASSERT((int)t < ABL_ARRAY_SIZE(str_values));
@@ -53,13 +56,19 @@ const char* token_type_to_string(token_type t)
 
 abl_int token_as_int(lexer* lex, token t)
 {
-	return (abl_int)strtol(lex->start + t.start, lex->start + t.end, 10);
+	return (abl_int)strtol(lex->start + t.start, NULL, 10);
+}
+
+abl_bool token_as_bool(lexer* lex, token t)
+{
+	return (abl_bool)strncmp(lex->start + t.start, "true", 4) > 0;
 }
 
 void init_lexer(lexer* lex, const char* src)
 {
 	ABL_ASSERT(lex);
-	lex->start = src;	
+	lex->src = src;
+	lex->start = src;
 	lex->current = src;
 	lex->line = 1;
 }
@@ -68,7 +77,7 @@ static token make_token(lexer* lex, token_type type)
 {
 	token tk;
 	tk.type = type;
-	tk.start = lex->start;
+	tk.start = (int)(lex->start - lex->src);
 	tk.length = (int)(lex->current - lex->start);
 	tk.line = lex->line;
 	return tk;
@@ -225,8 +234,9 @@ token lex_token(lexer* lex)
 	if(*lex->current == '\0')
 		return make_token(lex, TK_EOF);
 
+	lex->start = lex->current;
 	char const c = *lex->current++;
-	printf("current char %c\n", c);
+	printf("[lexer] current char %c\n", c);
 	switch(c) {
 		case '(': return make_token(lex, TK_OPEN_PAREN);
 		case ')': return make_token(lex, TK_CLOSE_PAREN);
