@@ -32,6 +32,7 @@ static parse_rule* get_rule(token_type type);
 
 static void error_at(compiler* c, const char* msg, ...)
 {
+	__debugbreak();
 	ABL_DEBUG_DIAGNOSTIC("[line %d] error ", c->current.line);
 	c->had_error = true;
 	
@@ -81,11 +82,6 @@ static void consume(compiler* c, token_type t)
 	}
 }
 
-static void grouping(compiler* c)
-{
-	//exression();
-	consume(c, TK_CLOSE_PAREN);
-}
 
 static void parse_precedence(compiler* c, precedence prec)
 {
@@ -98,12 +94,22 @@ static void parse_precedence(compiler* c, precedence prec)
 	}
 	prefix_rule(c);
 
-	while (prec <= get_rule(c->current.type)->prec) 
+	while (prec <= get_rule(advance(c).type)->prec)
 	{
-		advance(c);
 		parse_fn const infix_rule = get_rule(c->current.type)->infix;
 		infix_rule(c);
 	}
+}
+
+static void expression(compiler* c)
+{
+	parse_precedence(c, PREC_ASSIGNMENT);
+}
+
+static void grouping(compiler* c)
+{
+	expression(c);
+	consume(c, TK_CLOSE_PAREN);
 }
 
 static void binary(compiler* c)
@@ -137,7 +143,7 @@ static void unary(compiler* c)
 
 static void primary(compiler* c)
 {
-	switch(advance(c).type)
+	switch(c->current.type)
 	{
 		case TK_INT:
 			emit_constant(c, make_int(token_as_int(&c->lex, c->current)));
@@ -150,11 +156,6 @@ static void primary(compiler* c)
 			error_at(c, "primary not recognised");
 		break;
 	}
-}
-
-static void expression(compiler* c) 
-{
-	
 }
 
 parse_rule rules[] = {
@@ -207,10 +208,10 @@ static void constant(compiler* c, abl_value val)
 	switch (val.type)
 	{
 	case VAL_INT:
-		write4_chunk(&c->out, token_as_int(&c->lex, c->current));
+		write4_chunk(&c->out, val.v.i);
 		break;
 	case VAL_BOOL:
-		write_chunk(&c->out, token_as_bool(&c->lex, c->current));
+		write_chunk(&c->out, val.v.b);
 		break;
 	default:
 		error_at(c, "constant not recognised");
@@ -235,7 +236,14 @@ void compile(const char* src, FILE* out)
 	abl_value_array_init(&c.constants);
 	init_chunk(&c.out);
 	c.had_error = false;
-	primary(&c);
+	expression(&c);
 	compile_constants(&c);
 	disassemble_chunk(&c.out, out);
+
+	for (int i = 0; i < c.out.size; i++)
+	{
+		if (i % 16 == 0)
+			printf("\n");
+		printf("%02X ", c.out.code[i]);
+	}
 }
