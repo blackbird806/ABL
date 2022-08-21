@@ -56,12 +56,12 @@ const char* token_type_to_string(token_type t)
 
 abl_int token_as_int(lexer* lex, token t)
 {
-	return (abl_int)strtol(lex->start + t.start, NULL, 10);
+	return (abl_int)strtol(lex->src + t.start, NULL, 10);
 }
 
 abl_bool token_as_bool(lexer* lex, token t)
 {
-	return (abl_bool)strncmp(lex->start + t.start, "true", 4) > 0;
+	return (abl_bool)strncmp(lex->src + t.start, "true", 4) > 0;
 }
 
 void init_lexer(lexer* lex, const char* src)

@@ -54,7 +54,7 @@ static int disassemble_constant(bytecode_chunk* c, FILE* out, int offset)
 	switch (type)
 	{
 	case VAL_BOOL:
-		*(abl_bool*)&c->code[offset] == true ? fprintf(out, " BOOL: TRUE") : fprintf(out, "FALSE");
+		*(abl_bool*)&c->code[offset] == true ? fprintf(out, " BOOL: TRUE") : fprintf(out, "BOOL: FALSE");
 		offset += sizeof(abl_bool);
 		break;
 	case VAL_INT:
@@ -110,7 +110,7 @@ int disassemble_instruction(bytecode_chunk* c, FILE* out, int offset)
 {
 	#define SIMPLE_INSTRUCTION(name) case OP_##name : return simple_instruction(#name, out, offset)
 
-	fprintf(out, "%04d ", offset);
+	fprintf(out, "%04X ", offset);
 	uint8_t const instruction = c->code[offset];
 	switch (instruction)
 	{
