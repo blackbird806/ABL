@@ -71,6 +71,7 @@ void init_lexer(lexer* lex, const char* src)
 	lex->start = src;
 	lex->current = src;
 	lex->line = 1;
+	lex->lookahead_idx = -1;
 }
 
 static token make_token(lexer* lex, token_type type)
@@ -226,35 +227,33 @@ static token lex_identifier_or_keyword(lexer* lex)
 	return make_token(lex, get_word_token_type(lex));
 }
 
-token lex_token(lexer* lex)
+static token lex_token_impl(lexer* lex)
 {
-	ABL_ASSERT(lex);
-	
 	skip_whitespace(lex);
-	if(*lex->current == '\0')
+	if (*lex->current == '\0')
 		return make_token(lex, TK_EOF);
 
 	lex->start = lex->current;
 	char const c = *lex->current++;
 	printf("[lexer] current char %c\n", c);
-	switch(c) {
-		case '(': return make_token(lex, TK_OPEN_PAREN);
-		case ')': return make_token(lex, TK_CLOSE_PAREN);
-		case '{': return make_token(lex, TK_OPEN_BRACE);
-		case '}': return make_token(lex, TK_CLOSE_BRACE);
-		case ';': return make_token(lex, TK_SEMICOLON);
-		case ',': return make_token(lex, TK_COMMA);
-		case '.': return make_token(lex, TK_DOT);
-		case ':': return make_token(lex, TK_DOUBLE_DOT);
-		case '-': return make_token(lex, TK_MINUS);
-		case '+': return make_token(lex, TK_PLUS);
-		case '/': return make_token(lex, TK_SLASH);
-		case '*': return make_token(lex, TK_STAR);
-		case '"': return lex_string(lex);
-		case '!': return make_token(lex, match(lex, '=') ? TK_NOT_EQUAL : TK_NOT); 
-		case '=': return make_token(lex, match(lex, '=') ? TK_EQUAL_EQUAL : TK_EQUAL); 
-		case '<': return make_token(lex, match(lex, '=') ? TK_LESS_EQUAL : TK_LESS); 
-		case '>': return make_token(lex, match(lex, '=') ? TK_GREATER_EQUAL : TK_GREATER); 
+	switch (c) {
+	case '(': return make_token(lex, TK_OPEN_PAREN);
+	case ')': return make_token(lex, TK_CLOSE_PAREN);
+	case '{': return make_token(lex, TK_OPEN_BRACE);
+	case '}': return make_token(lex, TK_CLOSE_BRACE);
+	case ';': return make_token(lex, TK_SEMICOLON);
+	case ',': return make_token(lex, TK_COMMA);
+	case '.': return make_token(lex, TK_DOT);
+	case ':': return make_token(lex, TK_DOUBLE_DOT);
+	case '-': return make_token(lex, TK_MINUS);
+	case '+': return make_token(lex, TK_PLUS);
+	case '/': return make_token(lex, TK_SLASH);
+	case '*': return make_token(lex, TK_STAR);
+	case '"': return lex_string(lex);
+	case '!': return make_token(lex, match(lex, '=') ? TK_NOT_EQUAL : TK_NOT);
+	case '=': return make_token(lex, match(lex, '=') ? TK_EQUAL_EQUAL : TK_EQUAL);
+	case '<': return make_token(lex, match(lex, '=') ? TK_LESS_EQUAL : TK_LESS);
+	case '>': return make_token(lex, match(lex, '=') ? TK_GREATER_EQUAL : TK_GREATER);
 	}
 
 	if (isdigit(c))
@@ -263,9 +262,38 @@ token lex_token(lexer* lex)
 	// identifiers or keywords
 	if (isalpha(c) || c == '_')
 	{
-		return lex_identifier_or_keyword(lex);	
+		return lex_identifier_or_keyword(lex);
 	}
 
 	return make_token(lex, TK_ERR);
+}
+
+token lex_token(lexer* lex)
+{
+	ABL_ASSERT(lex);
+
+	if (lex->lookahead_idx >= 0)
+	{
+		return lex->lookahead[lex->lookahead_idx--];
+	}
+
+	return lex_token_impl(lex);
+}
+
+token peek_token(lexer* lex, int idx)
+{
+	ABL_ASSERT(lex);
+	ABL_ASSERT(idx > 0 && idx < LOOKAHEADSIZE);
+
+	// I'm still not sure about this but it seems to works
+	if (idx-1 <= lex->lookahead_idx)
+		return lex->lookahead[idx-1];
+
+	for (int i = lex->lookahead_idx+1; i < idx; i++)
+	{
+		lex->lookahead[++lex->lookahead_idx] = lex_token_impl(lex);
+	}
+
+	return lex->lookahead[lex->lookahead_idx];
 }
 

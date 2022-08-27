@@ -35,15 +35,20 @@ typedef struct token {
 	int line;
 } token;
 
+enum { LOOKAHEADSIZE = 4 };
+
 typedef struct lexer {
 	const char* src;
 	const char* start;
 	const char* current;
 	int line;
+	token lookahead[LOOKAHEADSIZE];
+	int lookahead_idx;
 } lexer;
 
 void init_lexer(lexer* lex, const char* src);
 token lex_token(lexer* lex);
+token peek_token(lexer* lex, int i);
 
 abl_int token_as_int(lexer* l, token t);
 abl_bool token_as_bool(lexer* lex, token t);

@@ -14,9 +14,9 @@ typedef enum {
 	OP_ADD, OP_SUB, OP_DIV, OP_MUL,
 	OP_CONST,
 	OP_NEG,
+	OP_NOT,
 	OP_PUSH, OP_POP,
 	OP_RET
-
 } op_code;
 
 typedef struct {

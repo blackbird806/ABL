@@ -16,7 +16,7 @@ static char* read_file(const char* path)
 	fseek(file, 0L, SEEK_END);
 	size_t const size = ftell(file);
 	rewind(file);
-	char* buffer = (char*)malloc(size + 1);
+	char* buffer = malloc(size + 1);
 	assert(buffer != NULL);
 	fread(buffer, sizeof(char), size, file);
 	buffer[size] = '\0';
@@ -40,8 +40,7 @@ static void repl()
 		do {
 			tk = lex_token(&lex);
 			printf("tk : %d\n", tk.type);
-		}
-		while (tk.type != TK_EOF);
+		} while (tk.type != TK_EOF);
 	}
 }
 

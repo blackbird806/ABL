@@ -59,3 +59,6 @@ ABL.vcxproj
 *.filters
 x64
 .vs
+*.scor
+*.incl
+*.t0000

@@ -29,10 +29,8 @@ typedef struct
 
 static parse_rule* get_rule(token_type type);
 
-
 static void error_at(compiler* c, const char* msg, ...)
 {
-	__debugbreak();
 	ABL_DEBUG_DIAGNOSTIC("[line %d] error ", c->current.line);
 	c->had_error = true;
 	
@@ -54,6 +52,7 @@ static void error_at(compiler* c, const char* msg, ...)
 	ABL_DEBUG_VDIAGNOSTIC(msg, args);
 	va_end(args);
 	ABL_DEBUG_DIAGNOSTIC("%s\n", "");
+	__debugbreak();
 }
 
 static uint32_t make_constant(compiler* c, abl_value val)
@@ -82,7 +81,6 @@ static void consume(compiler* c, token_type t)
 	}
 }
 
-
 static void parse_precedence(compiler* c, precedence prec)
 {
 	advance(c);
@@ -94,8 +92,9 @@ static void parse_precedence(compiler* c, precedence prec)
 	}
 	prefix_rule(c);
 
-	while (prec <= get_rule(advance(c).type)->prec)
+	while (prec <= get_rule(peek_token(&c->lex, 1).type)->prec)
 	{
+		advance(c);
 		parse_fn const infix_rule = get_rule(c->current.type)->infix;
 		infix_rule(c);
 	}
@@ -138,6 +137,15 @@ static void unary(compiler* c)
 	{
 	case TK_MINUS:
 		write_chunk(&c->out, OP_NEG);
+		break;
+	case TK_NOT:
+		write_chunk(&c->out, OP_NOT);
+		break;
+	case TK_PLUS: // unary plus is implicit so we do nothing here
+		break;
+	default:
+		error_at(c, "unary operator not recognized");
+		break;
 	}
 }
 
@@ -153,7 +161,7 @@ static void primary(compiler* c)
 			emit_constant(c, make_bool(token_as_bool(&c->lex, c->current)));
 			break;
 		default:
-			error_at(c, "primary not recognised");
+			ABL_ASSERT(false); // unreachable
 		break;
 	}
 }
@@ -166,11 +174,11 @@ parse_rule rules[] = {
   [TK_COMMA] = {NULL,     NULL,   PREC_NONE},
   [TK_DOT] = {NULL,     NULL,   PREC_NONE},
   [TK_MINUS] = {unary,    binary, PREC_TERM},
-  [TK_PLUS] = {NULL,     binary, PREC_TERM},
+  [TK_PLUS] = {unary,     binary, PREC_TERM},
   [TK_SEMICOLON] = {NULL,     NULL,   PREC_NONE},
   [TK_SLASH] = {NULL,     binary, PREC_FACTOR},
   [TK_STAR] = {NULL,     binary, PREC_FACTOR},
-  [TK_NOT] = {NULL,     NULL,   PREC_NONE},
+  [TK_NOT] = {unary,     NULL,   PREC_NONE},
   [TK_NOT_EQUAL] = {NULL,     NULL,   PREC_NONE},
   [TK_EQUAL] = {NULL,     NULL,   PREC_NONE},
   [TK_EQUAL_EQUAL] = {NULL,     NULL,   PREC_NONE},
