@@ -44,6 +44,7 @@ static void error_at(compiler* c, const char* msg, ...)
 	}
 	else
 	{
+		// @Bug this do not works
 		ABL_DEBUG_DIAGNOSTIC("at '%*.s' ", c->current.length, c->current.start);
 	}
 
@@ -71,6 +72,11 @@ static token advance(compiler* c)
 {
 	c->current = lex_token(&c->lex);
 	return c->current;
+}
+
+static token peek(compiler* c, int i)
+{
+	return peek_token(&c->lex, i);
 }
 
 static void consume(compiler* c, token_type t)
@@ -227,6 +233,56 @@ static void constant(compiler* c, abl_value val)
 	}
 }
 
+static void statement(compiler* c);
+
+static void expr_statement(compiler* c)
+{
+	expression(c);
+	consume(c, TK_SEMICOLON);
+}
+
+static void block_statement(compiler* c)
+{
+	consume(c, TK_OPEN_BRACE);
+	while (peek(c, 1).type != TK_CLOSE_BRACE)
+	{
+		statement(c);
+	}
+	advance(c); // pass close bracket
+}
+
+static void if_statement(compiler* c)
+{
+	consume(c, TK_IF);
+	block_statement(c);
+}
+
+static void return_statement(compiler* c)
+{
+	consume(c, TK_RETURN);
+	expression(c);
+	consume(c, TK_SEMICOLON);
+}
+
+static void statement(compiler* c)
+{
+	token_type const next = peek(c, 1).type;
+	switch(next)
+	{
+	case TK_IF:
+		if_statement(c);
+		break;
+	case TK_RETURN:
+		return_statement(c);
+		break;
+	case TK_OPEN_BRACE:
+		block_statement(c);
+		break;
+		default:
+			expr_statement(c);
+	}
+}
+
 static void compile_constants(compiler* c)
 {
 	write_chunk(&c->out, SECTION_CONSTANTS);
@@ -244,7 +300,7 @@ void compile(const char* src, FILE* out)
 	abl_value_array_init(&c.constants);
 	init_chunk(&c.out);
 	c.had_error = false;
-	expression(&c);
+	statement(&c);
 	compile_constants(&c);
 	disassemble_chunk(&c.out, out);
 

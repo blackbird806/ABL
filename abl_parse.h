@@ -68,5 +68,4 @@ typedef struct decl {
 	decl_type type;
 } decl;
 
-
 #endif

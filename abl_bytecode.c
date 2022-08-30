@@ -3,6 +3,7 @@
 #include "abl_value.h"
 #include <stdbool.h>
 
+// @Bug realloc seems to fail sometimes
 static void grow_chunk(bytecode_chunk* c)
 {
 	c->capacity = c->capacity < 8 ? 8 : c->capacity * 2;
