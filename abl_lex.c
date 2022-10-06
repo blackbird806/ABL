@@ -64,6 +64,13 @@ abl_bool token_as_bool(lexer* lex, token t)
 	return (abl_bool)strncmp(lex->src + t.start, "true", 4) > 0;
 }
 
+abl_string token_as_string(lexer* lex, token t)
+{
+	abl_string str;
+	str.size = t.length;
+	str.data = 
+}
+
 void init_lexer(lexer* lex, const char* src)
 {
 	ABL_ASSERT(lex);
@@ -111,6 +118,7 @@ static void skip_whitespace(lexer* lex)
 				}
 				else
 					return;
+				break;
 			default: 
 				return;
 		}

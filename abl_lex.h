@@ -2,6 +2,7 @@
 #define ABL_LEX_H 
 
 #include "abl_core.h"
+#include "abl_value.h"
 
 typedef enum token_type {
 	TK_ERR,
@@ -52,5 +53,6 @@ token peek_token(lexer* lex, int i);
 
 abl_int token_as_int(lexer* l, token t);
 abl_bool token_as_bool(lexer* lex, token t);
+abl_string token_as_string(lexer* lex, token t);
 
 #endif

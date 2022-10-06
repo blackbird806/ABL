@@ -64,7 +64,7 @@ static uint32_t make_constant(compiler* c, abl_value val)
 
 static void emit_constant(compiler* c, abl_value val)
 {
-	write_chunk(&c->out, OP_CONST);
+	write_chunk(&c->out, OP_PUSHC);
 	write4_chunk(&c->out, make_constant(c, val));
 }
 
@@ -172,6 +172,11 @@ static void primary(compiler* c)
 	}
 }
 
+static void string(compiler* c)
+{
+	emit_constant(c, make_string());
+}
+
 parse_rule rules[] = {
   [TK_OPEN_PAREN] = {grouping, NULL,   PREC_NONE},
   [TK_CLOSE_PAREN] = {NULL,     NULL,   PREC_NONE},
@@ -192,8 +197,8 @@ parse_rule rules[] = {
   [TK_GREATER_EQUAL] = {NULL,     NULL,   PREC_NONE},
   [TK_LESS] = {NULL,     NULL,   PREC_NONE},
   [TK_LESS_EQUAL] = {NULL,     NULL,   PREC_NONE},
-  [TK_IDENTIFIER] = {NULL,     NULL,   PREC_NONE},
-  [TK_STRING] = {NULL,     NULL,   PREC_NONE},
+  [TK_IDENTIFIER] = {primary,     NULL,   PREC_NONE},
+  [TK_STRING] = {string,     NULL,   PREC_NONE},
   [TK_INT] = {primary,   NULL,   PREC_NONE},
   [TK_FLOAT] = {primary,   NULL,   PREC_NONE},
   [TK_AND] = {NULL,     NULL,   PREC_NONE},

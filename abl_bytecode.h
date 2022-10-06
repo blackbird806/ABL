@@ -12,7 +12,7 @@ typedef enum {
 	
 	OP_NOP,
 	OP_ADD, OP_SUB, OP_DIV, OP_MUL,
-	OP_CONST,
+	OP_PUSHC,
 	OP_NEG,
 	OP_NOT,
 	OP_PUSH, OP_POP,

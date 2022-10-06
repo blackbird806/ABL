@@ -7,9 +7,28 @@ typedef enum {
 
 	VAL_BOOL,
 	VAL_INT,
-	VAL_FLOAT
+	VAL_FLOAT,
+	VAL_OBJ
 
 } value_type;
+
+typedef enum {
+
+	OBJ_STRING
+
+} object_type;
+
+typedef struct
+{
+	object_type type;
+} abl_obj;
+
+typedef struct
+{
+	abl_obj obj;
+	int size;
+	char* data;
+} abl_string;
 
 typedef struct abl_value {
 	value_type type;
@@ -17,12 +36,16 @@ typedef struct abl_value {
 		abl_bool b;
 		abl_float f;
 		abl_int i;
+		abl_obj* o;
 	} v;
 } abl_value;
+
+abl_string allocate_string(char* chars, int size);
 
 abl_value make_int(abl_int val);
 abl_value make_float(abl_float val);
 abl_value make_bool(bool val);
+abl_value make_string(abl_string* val);
 
 typedef struct abl_value_array {
 	int capacity;

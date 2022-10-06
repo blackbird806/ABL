@@ -100,7 +100,7 @@ static int simple_instruction(const char* c, FILE* out, int offset)
 
 static int constant_instruction(bytecode_chunk* chunk, FILE* out, int offset)
 {
-	fprintf(out, "CONST ");
+	fprintf(out, "PUSHC ");
 	offset++;
 	fprintf(out, "%d\n", *(uint32_t*)&chunk->code[offset]);
 	offset += sizeof(uint32_t);
@@ -123,7 +123,7 @@ int disassemble_instruction(bytecode_chunk* c, FILE* out, int offset)
 		SIMPLE_INSTRUCTION(DIV);
 		SIMPLE_INSTRUCTION(PUSH);
 		SIMPLE_INSTRUCTION(POP);
-		case OP_CONST:
+		case OP_PUSHC:
 			return constant_instruction(c, out, offset);
 	}
 }

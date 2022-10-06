@@ -1,5 +1,7 @@
 #include "abl_value.h"
 
+#include <string.h>
+
 abl_value make_int(abl_int val)
 {
 	return (abl_value) { VAL_INT, { .i = val } };
@@ -13,6 +15,11 @@ abl_value make_float(abl_float val)
 abl_value make_bool(bool val)
 {
 	return (abl_value) { VAL_BOOL, { .b = val } };
+}
+
+abl_value make_string(abl_string* str)
+{
+	return (abl_value) { VAL_OBJ, { .o = str } };
 }
 
 void abl_value_array_init(abl_value_array* arr)
