@@ -2,6 +2,7 @@
 #define ABL_BYTECODE_H
 
 #include "abl_core.h"
+#include "abl_value.h"
 
 typedef enum {
 	SECTION_CODE,
@@ -28,6 +29,7 @@ typedef struct {
 void init_chunk(bytecode_chunk* c);
 void write_chunk(bytecode_chunk* c, uint8_t byte);
 void write4_chunk(bytecode_chunk* c, uint32_t bytes);
+void writestr_chunk(bytecode_chunk* c, abl_string* str);
 void destroy_chunk(bytecode_chunk* c);
 
 void disassemble_chunk(bytecode_chunk* c, FILE* outstream);

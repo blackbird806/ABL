@@ -64,11 +64,16 @@ abl_bool token_as_bool(lexer* lex, token t)
 	return (abl_bool)strncmp(lex->src + t.start, "true", 4) > 0;
 }
 
-abl_string token_as_string(lexer* lex, token t)
+abl_string* token_as_string(lexer* lex, token t)
 {
-	abl_string str;
-	str.size = t.length;
-	str.data = 
+	abl_string* str = ABL_MALLOC(sizeof(abl_string));
+	ABL_ASSERT(str);
+	str->obj.type = OBJ_STRING;
+	str->size = t.length;
+	str->data = ABL_MALLOC(t.length * sizeof(abl_char));
+	ABL_ASSERT(str->data);
+	memcpy(str->data, &lex->current[t.start], t.length);
+	return str;
 }
 
 void init_lexer(lexer* lex, const char* src)

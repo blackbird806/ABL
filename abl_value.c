@@ -19,7 +19,7 @@ abl_value make_bool(bool val)
 
 abl_value make_string(abl_string* str)
 {
-	return (abl_value) { VAL_OBJ, { .o = str } };
+	return (abl_value) { VAL_OBJ, { .o = (abl_obj*)str } };
 }
 
 void abl_value_array_init(abl_value_array* arr)
@@ -52,5 +52,3 @@ void abl_value_array_destroy(abl_value_array* arr)
 	arr->size = 0;
 	arr->capacity = 0;
 }
-
-

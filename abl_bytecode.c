@@ -2,6 +2,7 @@
 
 #include "abl_value.h"
 #include <stdbool.h>
+#include <string.h>
 
 // @Bug realloc seems to fail sometimes
 static void grow_chunk(bytecode_chunk* c)
@@ -38,6 +39,18 @@ void write4_chunk(bytecode_chunk* c, uint32_t bytes)
 	c->size += sizeof(bytes);
 }
 
+void writestr_chunk(bytecode_chunk* c, abl_string* str)
+{
+	ABL_ASSERT(c);
+	ABL_ASSERT(str);
+
+	int const strmemsize = sizeof(abl_char) * str->size;
+	if (c->size + strmemsize > c->capacity)
+		grow_chunk(c);
+	memcpy(&c->code[c->size], str->data, strmemsize);
+	c->size += strmemsize;
+}
+
 void destroy_chunk(bytecode_chunk* c)
 {
 	ABL_ASSERT(c);
@@ -65,6 +78,22 @@ static int disassemble_constant(bytecode_chunk* c, FILE* out, int offset)
 	case VAL_FLOAT:
 		fprintf(out, "FLOAT %f\n", *(abl_float*)&c->code[offset]);
 		offset += sizeof(abl_float);
+		break;
+	case VAL_OBJ:
+		{
+			object_type const obj_type = *(uint8_t*)&c->code[offset];
+			switch (obj_type)
+			{
+			case OBJ_STRING:
+				{
+					uint32_t const str_len = *(int*)&c->code[offset + 1];
+					size_t const strsize = str_len * sizeof(abl_char);
+					abl_char* str = (abl_char*)&c->code[offset + 1 + sizeof(uint32_t)];
+					printf("%.*s", str_len, str);
+				}
+				break;
+			}
+		}
 		break;
 	default: 
 		fprintf(out, "type not recognized\n");

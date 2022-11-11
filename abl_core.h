@@ -9,6 +9,7 @@
 
 // float and int types carried by ABL values
 typedef float abl_float;
+typedef char abl_char;
 typedef int abl_int;
 typedef bool abl_bool;
 

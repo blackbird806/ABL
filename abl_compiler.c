@@ -166,15 +166,13 @@ static void primary(compiler* c)
 		case TK_FALSE:
 			emit_constant(c, make_bool(token_as_bool(&c->lex, c->current)));
 			break;
+		case TK_STRING:
+			emit_constant(c, make_string(token_as_string(&c->lex, c->current)));
+			break;
 		default:
 			ABL_ASSERT(false); // unreachable
 		break;
 	}
-}
-
-static void string(compiler* c)
-{
-	emit_constant(c, make_string());
 }
 
 parse_rule rules[] = {
@@ -198,7 +196,7 @@ parse_rule rules[] = {
   [TK_LESS] = {NULL,     NULL,   PREC_NONE},
   [TK_LESS_EQUAL] = {NULL,     NULL,   PREC_NONE},
   [TK_IDENTIFIER] = {primary,     NULL,   PREC_NONE},
-  [TK_STRING] = {string,     NULL,   PREC_NONE},
+  [TK_STRING] = {primary,     NULL,   PREC_NONE},
   [TK_INT] = {primary,   NULL,   PREC_NONE},
   [TK_FLOAT] = {primary,   NULL,   PREC_NONE},
   [TK_AND] = {NULL,     NULL,   PREC_NONE},
@@ -231,6 +229,19 @@ static void constant(compiler* c, abl_value val)
 		break;
 	case VAL_BOOL:
 		write_chunk(&c->out, val.v.b);
+		break;
+	case VAL_OBJ:
+		switch (val.v.o->type)
+		{
+		case OBJ_STRING:
+			write_chunk(&c->out, val.v.o->type);
+			write4_chunk(&c->out, ((abl_string*)val.v.o)->size);
+			writestr_chunk(&c->out, (abl_string*)val.v.o);
+		break;
+		default:
+			error_at(c, "constant not recognised");
+		break;
+		}
 		break;
 	default:
 		error_at(c, "constant not recognised");

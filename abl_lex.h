@@ -53,6 +53,6 @@ token peek_token(lexer* lex, int i);
 
 abl_int token_as_int(lexer* l, token t);
 abl_bool token_as_bool(lexer* lex, token t);
-abl_string token_as_string(lexer* lex, token t);
+abl_string* token_as_string(lexer* lex, token t);
 
 #endif

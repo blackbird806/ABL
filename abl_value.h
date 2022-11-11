@@ -14,7 +14,8 @@ typedef enum {
 
 typedef enum {
 
-	OBJ_STRING
+	OBJ_STRING,
+	OBJ_TABLE,
 
 } object_type;
 
@@ -26,8 +27,8 @@ typedef struct
 typedef struct
 {
 	abl_obj obj;
-	int size;
-	char* data;
+	uint32_t size;
+	abl_char* data;
 } abl_string;
 
 typedef struct abl_value {
