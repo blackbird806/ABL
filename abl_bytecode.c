@@ -81,15 +81,18 @@ static int disassemble_constant(bytecode_chunk* c, FILE* out, int offset)
 		break;
 	case VAL_OBJ:
 		{
-			object_type const obj_type = *(uint8_t*)&c->code[offset];
+			object_type const obj_type = c->code[offset];
+			offset++;
 			switch (obj_type)
 			{
 			case OBJ_STRING:
 				{
-					uint32_t const str_len = *(int*)&c->code[offset + 1];
-					size_t const strsize = str_len * sizeof(abl_char);
-					abl_char* str = (abl_char*)&c->code[offset + 1 + sizeof(uint32_t)];
-					printf("%.*s", str_len, str);
+					uint32_t const str_len = *(uint32_t*)&c->code[offset];
+					offset += sizeof(uint32_t);
+					int const strsize = str_len * sizeof(abl_char);
+					abl_char* str = (abl_char*)&c->code[offset];
+					printf("\"%.*s\"\n", str_len, str);
+					offset += strsize;
 				}
 				break;
 			}

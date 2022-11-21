@@ -72,7 +72,7 @@ abl_string* token_as_string(lexer* lex, token t)
 	str->size = t.length;
 	str->data = ABL_MALLOC(t.length * sizeof(abl_char));
 	ABL_ASSERT(str->data);
-	memcpy(str->data, &lex->current[t.start], t.length);
+	memcpy(str->data, &lex->src[t.start], t.length * sizeof(abl_char));
 	return str;
 }
 
@@ -197,6 +197,7 @@ static token_type get_word_token_type(lexer* lex)
 
 static token lex_string(lexer* lex)
 {
+	lex->start++; // skip the " when making the token
 	while (*lex->current != '"' && !is_at_end(lex))
 	{
 		if (*lex->current == '\n') 
@@ -209,8 +210,9 @@ static token lex_string(lexer* lex)
 		ABL_DEBUG_DIAGNOSTIC("lexer error : lexing string line %d\n", lex->line);
 		ABL_ASSERT(false);
 	}
+	token const r = make_token(lex, TK_STRING);
 	lex->current++; // pass the second '"'
-	return make_token(lex, TK_STRING);
+	return r;
 }
 
 static token lex_num(lexer* lex)
