@@ -14,6 +14,7 @@ typedef int abl_int;
 typedef bool abl_bool;
 
 #define ABL_ARRAY_SIZE(a) (sizeof(a) / sizeof(a[0])) 
+#define ABL_GROW_ARRAY(type, pointer, old_size, new_size) (type*) abl_reallocate(pointer, (old_size) * sizeof(type), (new_size) * sizeof(type))
 
 // c functions
 #include <assert.h>
@@ -29,3 +30,13 @@ typedef bool abl_bool;
 	#define ABL_DEBUG_VDIAGNOSTIC(fmt, args) vfprintf(stderr, fmt, args)
 
 #endif
+
+inline void* abl_reallocate(void* ptr, size_t old_size, size_t new_size)
+{
+	if (new_size == 0)
+	{
+		ABL_FREE(ptr);
+		return NULL;
+	}
+	return ABL_REALLOC(ptr, new_size);
+}

@@ -1,10 +1,24 @@
 #include "abl_value.h"
-
 #include <string.h>
+
+uint32_t hash_string(const char* str, int size)
+{
+	uint32_t hash = 2166136261u;
+	for (int i = 0; i < size; i++) {
+		hash ^= (uint8_t)str[i];
+		hash *= 16777619;
+	}
+	return hash;
+}
 
 abl_value make_int(abl_int val)
 {
 	return (abl_value) { VAL_INT, { .i = val } };
+}
+
+abl_value make_null()
+{
+	return (abl_value) { VAL_NULL };
 }
 
 abl_value make_float(abl_float val)

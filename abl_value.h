@@ -8,7 +8,8 @@ typedef enum {
 	VAL_BOOL,
 	VAL_INT,
 	VAL_FLOAT,
-	VAL_OBJ
+	VAL_OBJ,
+	VAL_NULL
 
 } value_type;
 
@@ -29,6 +30,7 @@ typedef struct
 	abl_obj obj;
 	uint32_t size;
 	abl_char* data;
+	uint32_t hash;
 } abl_string;
 
 typedef struct abl_value {
@@ -42,8 +44,10 @@ typedef struct abl_value {
 } abl_value;
 
 abl_string allocate_string(char* chars, int size);
+uint32_t hash_string(const char* str, int size);
 
 abl_value make_int(abl_int val);
+abl_value make_null();
 abl_value make_float(abl_float val);
 abl_value make_bool(bool val);
 abl_value make_string(abl_string* val);

@@ -61,7 +61,9 @@ abl_int token_as_int(lexer* lex, token t)
 
 abl_bool token_as_bool(lexer* lex, token t)
 {
-	return (abl_bool)strncmp(lex->src + t.start, "true", 4) > 0;
+	// we already know that t represent a bool literal hence its str value is either "true" or "false"
+	// so we only need to compare the first char
+	return (lex->src + t.start)[0] == 't';
 }
 
 abl_string* token_as_string(lexer* lex, token t)
@@ -73,6 +75,7 @@ abl_string* token_as_string(lexer* lex, token t)
 	str->data = ABL_MALLOC(t.length * sizeof(abl_char));
 	ABL_ASSERT(str->data);
 	memcpy(str->data, &lex->src[t.start], t.length * sizeof(abl_char));
+	str->hash = hash_string(str->data, str->size);
 	return str;
 }
 
