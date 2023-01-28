@@ -125,10 +125,10 @@ static void binary(compiler* c)
 
 	switch (op_type)
 	{
-	case TK_PLUS: write_chunk(&c->out, OP_ADD); break;
-	case TK_MINUS: write_chunk(&c->out, OP_SUB); break;
-	case TK_STAR: write_chunk(&c->out, OP_MUL); break;
-	case TK_SLASH: write_chunk(&c->out, OP_DIV); break;
+	case TK_PLUS:	write_chunk(&c->out, OP_ADD); break;
+	case TK_MINUS:	write_chunk(&c->out, OP_SUB); break;
+	case TK_STAR:	write_chunk(&c->out, OP_MUL); break;
+	case TK_SLASH:	write_chunk(&c->out, OP_DIV); break;
 		default:
 			error_at(c, "unrecognized binary operator");
 	}

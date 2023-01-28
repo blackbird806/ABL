@@ -160,4 +160,16 @@ int disassemble_instruction(bytecode_chunk* c, FILE* out, int offset)
 	}
 }
 
+int move_next_instruction(bytecode_chunk* c, int offset)
+{
+	uint8_t const instruction = c->code[offset];
+	switch (instruction)
+	{
+		case OP_PUSHC:
+			return sizeof(uint8_t) + sizeof(uint32_t);
+		default:
+			return sizeof(uint8_t);
+	}
+}
+
 

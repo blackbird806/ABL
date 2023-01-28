@@ -25,18 +25,18 @@ typedef bool abl_bool;
 #define ABL_REALLOC(x, s) realloc(x, s)
 #define ABL_FREE(x) free(x)
 
-	#include <stdio.h>
-	#define ABL_DEBUG_DIAGNOSTIC(fmt, ...) fprintf(stderr, fmt, __VA_ARGS__)
-	#define ABL_DEBUG_VDIAGNOSTIC(fmt, args) vfprintf(stderr, fmt, args)
+#include <stdio.h>
+#define ABL_DEBUG_DIAGNOSTIC(fmt, ...) fprintf(stderr, fmt, __VA_ARGS__)
+#define ABL_DEBUG_VDIAGNOSTIC(fmt, args) vfprintf(stderr, fmt, args)
+
+//inline void* abl_reallocate(void* ptr, size_t old_size, size_t new_size)
+//{
+//	if (new_size == 0)
+//	{
+//		ABL_FREE(ptr);
+//		return NULL;
+//	}
+//	return ABL_REALLOC(ptr, new_size);
+//}
 
 #endif
-
-inline void* abl_reallocate(void* ptr, size_t old_size, size_t new_size)
-{
-	if (new_size == 0)
-	{
-		ABL_FREE(ptr);
-		return NULL;
-	}
-	return ABL_REALLOC(ptr, new_size);
-}

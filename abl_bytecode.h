@@ -34,5 +34,7 @@ void destroy_chunk(bytecode_chunk* c);
 
 void disassemble_chunk(bytecode_chunk* c, FILE* outstream);
 int disassemble_instruction(bytecode_chunk* c, FILE* out, int offset);
+// rename this
+int move_next_instruction(bytecode_chunk* c, int offset);
 
 #endif
