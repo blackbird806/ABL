@@ -83,10 +83,18 @@ abl_interpret_result abl_vm_interpret(abl_vm* vm, bytecode_chunk* chunk)
 			continue;
 		case OP_STORE:
 		{
-				abl_string const* key = (abl_string*)pop(vm).v.o;
-				abl_table_set(&vm->current_frame->variables, key, pop(vm));
-		}
+			abl_string const* key = (abl_string*)pop(vm).v.o;
+			abl_table_set(&vm->current_frame->variables, key, pop(vm));
 			break;
+		}
+		case OP_LOAD:
+		{
+			abl_string const* key = (abl_string*)pop(vm).v.o;
+			abl_value val = make_null();
+			abl_table_get(&vm->current_frame->variables, key, &val);
+			push(vm, val);
+			break;
+		}
 		case OP_PUSHC:
 		{
 			uint32_t const_id = read32(vm);

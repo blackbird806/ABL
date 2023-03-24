@@ -1,7 +1,8 @@
 #include "abl_value.h"
 #include <string.h>
+#include "abl_vm.h"
 
-uint32_t hash_string(const char* str, int size)
+uint32_t hash_string(const abl_char* str, int size)
 {
 	uint32_t hash = 2166136261u;
 	for (int i = 0; i < size; i++) {
@@ -9,6 +10,28 @@ uint32_t hash_string(const char* str, int size)
 		hash *= 16777619;
 	}
 	return hash;
+}
+
+abl_string allocate_string(abl_vm* vm, abl_char* chars, int size)
+{
+	ABL_ASSERT(vm);
+
+	uint32_t const hash = hash_string(chars, size);
+	abl_string* intern = abl_table_find_string(&vm->strings, chars, size, hash);
+	if (intern != NULL)
+		return *intern;
+
+	abl_string str;
+	str.obj.type = OBJ_STRING;
+	str.data = ABL_MALLOC(size * sizeof(abl_char));
+	ABL_ASSERT(str.data);
+	str.size = size;
+	str.hash = hash;
+	memcpy(str.data, chars, size * sizeof(abl_char));
+
+	abl_table_set(&vm->strings, &str, make_null());
+
+	return str;
 }
 
 abl_value make_int(abl_int val)
