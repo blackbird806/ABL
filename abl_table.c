@@ -71,7 +71,6 @@ static void adjust_capacity(abl_table* table, uint32_t capacity)
 	table->capacity = capacity;
 }
 
-
 bool abl_table_set(abl_table* table, abl_string* key, abl_value value)
 {
 	ABL_ASSERT(table);
@@ -124,6 +123,31 @@ bool abl_table_get(abl_table const* table, abl_string const* key, abl_value* val
 
 	*value =  entry->value;
 	return true;
+}
+
+abl_string* abl_table_find_string(abl_table* table, const abl_char* chars, uint32_t size, uint32_t hash)
+{
+	if (table->size == 0)
+		return NULL;
+
+	uint32_t index = hash % table->capacity;
+	while (true)
+	{
+		abl_table_entry* entry = &table->entries[index];
+		if (entry->key == NULL)
+		{
+			if (entry->value.type == VAL_NULL)
+				return NULL;
+		} 
+		else if (entry->key->size == size && entry->key->hash == hash &&
+			memcmp(entry->key->data, chars, size) == 0)
+		{
+			return entry->key;
+		}
+
+		index = (index + 1) % table->capacity;
+	}
+
 }
 
 bool abl_table_delete(abl_table* table, abl_string const* key)
