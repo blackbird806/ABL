@@ -4,6 +4,10 @@
 
 #include "abl_value.h"
 
+// DEBUG TO REMOVE
+#include "abl_vm.h"
+// 
+
 typedef enum {
 	PREC_NONE,
 	PREC_ASSIGNMENT,  // =
@@ -18,7 +22,7 @@ typedef enum {
 	PREC_PRIMARY
 } precedence;
 
-typedef void (*parse_fn)(compiler*);
+typedef void (*parse_fn)(abl_compiler*);
 
 typedef struct
 {
@@ -29,7 +33,7 @@ typedef struct
 
 static parse_rule* get_rule(token_type type);
 
-static void error_at(compiler* c, const char* msg, ...)
+static void error_at(abl_compiler* c, const char* msg, ...)
 {
 	ABL_DEBUG_DIAGNOSTIC("[line %d] error ", c->current.line);
 	c->had_error = true;
@@ -56,30 +60,30 @@ static void error_at(compiler* c, const char* msg, ...)
 	__debugbreak();
 }
 
-static uint32_t make_constant(compiler* c, abl_value val)
+static uint32_t make_constant(abl_compiler* c, abl_value val)
 {
 	abl_value_array_add(&c->constants, val);
 	return c->constants.size - 1;
 }
 
-static void emit_constant(compiler* c, abl_value val)
+static void emit_constant(abl_compiler* c, abl_value val)
 {
-	write_chunk(&c->out, OP_PUSHC);
-	write4_chunk(&c->out, make_constant(c, val));
+	write_chunk(&c->code_chunk, OP_PUSHC);
+	write4_chunk(&c->code_chunk, make_constant(c, val));
 }
 
-static token advance(compiler* c)
+static token advance(abl_compiler* c)
 {
 	c->current = lex_token(&c->lex);
 	return c->current;
 }
 
-static token peek(compiler* c, int i)
+static token peek(abl_compiler* c, int i)
 {
 	return peek_token(&c->lex, i);
 }
 
-static void consume(compiler* c, token_type t)
+static void consume(abl_compiler* c, token_type t)
 {
 	if (advance(c).type != t)
 	{
@@ -87,7 +91,7 @@ static void consume(compiler* c, token_type t)
 	}
 }
 
-static void parse_precedence(compiler* c, precedence prec)
+static void parse_precedence(abl_compiler* c, precedence prec)
 {
 	advance(c);
 	parse_fn const prefix_rule = get_rule(c->current.type)->prefix;
@@ -106,18 +110,18 @@ static void parse_precedence(compiler* c, precedence prec)
 	}
 }
 
-static void expression(compiler* c)
+static void expression(abl_compiler* c)
 {
 	parse_precedence(c, PREC_ASSIGNMENT);
 }
 
-static void grouping(compiler* c)
+static void grouping(abl_compiler* c)
 {
 	expression(c);
 	consume(c, TK_CLOSE_PAREN);
 }
 
-static void binary(compiler* c)
+static void binary(abl_compiler* c)
 {
 	token_type const op_type = c->current.type;
 	parse_rule const* rule = get_rule(op_type);
@@ -125,16 +129,16 @@ static void binary(compiler* c)
 
 	switch (op_type)
 	{
-	case TK_PLUS:	write_chunk(&c->out, OP_ADD); break;
-	case TK_MINUS:	write_chunk(&c->out, OP_SUB); break;
-	case TK_STAR:	write_chunk(&c->out, OP_MUL); break;
-	case TK_SLASH:	write_chunk(&c->out, OP_DIV); break;
+	case TK_PLUS:	write_chunk(&c->code_chunk, OP_ADD); break;
+	case TK_MINUS:	write_chunk(&c->code_chunk, OP_SUB); break;
+	case TK_STAR:	write_chunk(&c->code_chunk, OP_MUL); break;
+	case TK_SLASH:	write_chunk(&c->code_chunk, OP_DIV); break;
 		default:
 			error_at(c, "unrecognized binary operator");
 	}
 }
 
-static void unary(compiler* c)
+static void unary(abl_compiler* c)
 {
 	token_type const op_type = c->current.type;
 	parse_precedence(c, PREC_UNARY);
@@ -142,10 +146,10 @@ static void unary(compiler* c)
 	switch (op_type)
 	{
 	case TK_MINUS:
-		write_chunk(&c->out, OP_NEG);
+		write_chunk(&c->code_chunk, OP_NEG);
 		break;
 	case TK_NOT:
-		write_chunk(&c->out, OP_NOT);
+		write_chunk(&c->code_chunk, OP_NOT);
 		break;
 	case TK_PLUS: // unary plus is implicit so we do nothing here
 		break;
@@ -155,7 +159,7 @@ static void unary(compiler* c)
 	}
 }
 
-static void primary(compiler* c)
+static void primary(abl_compiler* c)
 {
 	switch(c->current.type)
 	{
@@ -219,24 +223,24 @@ static parse_rule* get_rule(token_type type) {
 	return &rules[type];
 }
 
-static void constant(compiler* c, abl_value val)
+static void constant(abl_compiler* c, abl_value val)
 {
-	write_chunk(&c->out, val.type);
+	write_chunk(&c->constants_chunk, val.type);
 	switch (val.type)
 	{
 	case VAL_INT:
-		write4_chunk(&c->out, val.v.i);
+		write4_chunk(&c->constants_chunk, val.v.i);
 		break;
 	case VAL_BOOL:
-		write_chunk(&c->out, val.v.b);
+		write_chunk(&c->constants_chunk, val.v.b);
 		break;
 	case VAL_OBJ:
+		write_chunk(&c->constants_chunk, val.v.o->type);
 		switch (val.v.o->type)
 		{
 		case OBJ_STRING:
-			write_chunk(&c->out, val.v.o->type);
-			write4_chunk(&c->out, ((abl_string*)val.v.o)->size);
-			writestr_chunk(&c->out, (abl_string*)val.v.o);
+			write4_chunk(&c->constants_chunk, ((abl_string*)val.v.o)->size);
+			writestr_chunk(&c->constants_chunk, (abl_string*)val.v.o);
 		break;
 		default:
 			error_at(c, "constant not recognised");
@@ -249,15 +253,15 @@ static void constant(compiler* c, abl_value val)
 	}
 }
 
-static void statement(compiler* c);
+static void statement(abl_compiler* c);
 
-static void expr_statement(compiler* c)
+static void expr_statement(abl_compiler* c)
 {
 	expression(c);
 	consume(c, TK_SEMICOLON);
 }
 
-static void block_statement(compiler* c)
+static void block_statement(abl_compiler* c)
 {
 	consume(c, TK_OPEN_BRACE);
 	while (peek(c, 1).type != TK_CLOSE_BRACE)
@@ -267,20 +271,21 @@ static void block_statement(compiler* c)
 	advance(c); // pass close bracket
 }
 
-static void if_statement(compiler* c)
+static void if_statement(abl_compiler* c)
 {
 	consume(c, TK_IF);
+	expression(c);
 	block_statement(c);
 }
 
-static void return_statement(compiler* c)
+static void return_statement(abl_compiler* c)
 {
 	consume(c, TK_RETURN);
 	expression(c);
 	consume(c, TK_SEMICOLON);
 }
 
-static void statement(compiler* c)
+static void statement(abl_compiler* c)
 {
 	token_type const next = peek(c, 1).type;
 	switch(next)
@@ -299,31 +304,43 @@ static void statement(compiler* c)
 	}
 }
 
-static void compile_constants(compiler* c)
+static void compile_constants(abl_compiler* c)
 {
-	write_chunk(&c->out, SECTION_CONSTANTS);
+	write_chunk(&c->constants_chunk, SECTION_CONSTANTS);
+	write4_chunk(&c->constants_chunk, c->constants.size);
 	for (uint32_t i = 0; i < c->constants.size; i++)
 	{
-		write4_chunk(&c->out, i);
+		write4_chunk(&c->constants_chunk, i);
 		constant(c, c->constants.values[i]);
 	}
 }
 
 void compile(const char* src, FILE* out)
 {
-	compiler c;
+	abl_compiler c;
 	init_lexer(&c.lex, src);
 	abl_value_array_init(&c.constants);
-	init_chunk(&c.out);
+	init_chunk(&c.code_chunk);
+	init_chunk(&c.constants_chunk);
 	c.had_error = false;
+	write_chunk(&c.code_chunk, SECTION_CODE);
 	statement(&c);
 	compile_constants(&c);
-	disassemble_chunk(&c.out, out);
 
-	for (int i = 0; i < c.out.size; i++)
-	{
-		if (i % 16 == 0)
-			printf("\n");
-		printf("%02X ", c.out.code[i]);
-	}
+	disassemble_chunk(&c.constants_chunk, out);
+	disassemble_chunk(&c.code_chunk, out);
+
+	abl_vm vm;
+	abl_vm_init(&vm);
+	abl_vm_get_constants_from_compiler(&vm, &c);
+
+	abl_vm_interpret(&vm, &c.code_chunk);
+
+	abl_vm_destroy(&vm);
+	//for (int i = 0; i < c.code_chunk.size; i++)
+	//{
+	//	if (i % 16 == 0)
+	//		printf("\n");
+	//	printf("%02X ", c.code_chunk.code[i]);
+	//}
 }

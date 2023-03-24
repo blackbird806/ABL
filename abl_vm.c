@@ -7,6 +7,20 @@ void abl_vm_init(abl_vm* vm)
 	vm->pc = NULL;
 
 	abl_table_init(&vm->strings);
+
+	for (int i = 0; i < ABL_CALLSTACK_MAX; i++)
+	{
+		abl_value_array_init(&vm->callstack[i].constants);
+	}
+
+	vm->current_frame = &vm->callstack[0];
+}
+
+void abl_vm_get_constants_from_compiler(abl_vm* vm, abl_compiler* compiler)
+{
+	ABL_ASSERT(vm);
+	ABL_ASSERT(compiler);
+	vm->callstack[0].constants = abl_value_array_move(&compiler->constants);
 }
 
 void abl_vm_destroy(abl_vm* vm)
@@ -34,17 +48,18 @@ static uint32_t read32(abl_vm* vm)
 	return val;
 }
 
+// TODO
 static void read_constants(abl_vm* vm, bytecode_chunk* c)
 {
 	int off = 0;
-	while (off < c->size)
-	{
-		off = move_next_instruction(c, off);
-		if (*(section_code*)&c->code[off] == SECTION_CONSTANTS)
-			break;
-	}
-	off++;
-	while (off < c->size)
+
+	if ((uint8_t)c->code[off++] != SECTION_CONSTANTS)
+		return;
+
+	uint32_t const size = (uint32_t)c->code[off];
+	off += sizeof(uint32_t);
+
+	for (uint32_t i = 0; i < size; i++)
 	{
 
 	}
@@ -57,8 +72,7 @@ abl_interpret_result abl_vm_interpret(abl_vm* vm, bytecode_chunk* chunk)
 	ABL_ASSERT(vm);
 	ABL_ASSERT(chunk);
 
-	read_constants(vm, chunk);
-	vm->pc = chunk->code;
+	vm->pc = ++chunk->code; // skip section name
 	while (true)
 	{
 		uint8_t const instruction = *vm->pc++;
@@ -68,10 +82,8 @@ abl_interpret_result abl_vm_interpret(abl_vm* vm, bytecode_chunk* chunk)
 			continue;
 		case OP_PUSHC:
 		{
-			// TODO search constants
 			uint32_t const_id = read32(vm);
-
-			push(vm, make_null());
+			push(vm, vm->current_frame->constants.values[const_id]);
 			break;
 		}
 		case OP_POP:

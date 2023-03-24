@@ -44,6 +44,15 @@ void abl_value_array_init(abl_value_array* arr)
 	arr->capacity = 0;
 }
 
+abl_value_array abl_value_array_move(abl_value_array* arr)
+{
+	abl_value_array tmp = *arr;
+	arr->capacity = 0;
+	arr->size = 0;
+	arr->values = NULL;
+	return tmp;
+}
+
 static void grow_value_array(abl_value_array* arr)
 {
 	arr->capacity = arr->capacity < 8 ? 8 : arr->capacity * 2;

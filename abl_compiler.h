@@ -12,10 +12,11 @@ typedef struct compiler
 	lexer lex;
 	token current;
 	
-	bytecode_chunk out;
+	bytecode_chunk constants_chunk;
+	bytecode_chunk code_chunk;
 	abl_value_array constants;
 	bool had_error;
-} compiler;
+} abl_compiler;
 
 void compile(const char* src, FILE* out);
 

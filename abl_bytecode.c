@@ -62,7 +62,7 @@ static int disassemble_constant(bytecode_chunk* c, FILE* out, int offset)
 {
 	uint32_t const index = *(uint32_t*)&c->code[offset];
 	offset += sizeof(uint32_t);
-	value_type const type = (value_type)c->code[offset];
+	value_type const type = (uint8_t)c->code[offset];
 	offset++;
 	fprintf(out, "[%d] ", index);
 	switch (type)
@@ -107,20 +107,30 @@ static int disassemble_constant(bytecode_chunk* c, FILE* out, int offset)
 void disassemble_chunk(bytecode_chunk* c, FILE* out)
 {
 	ABL_ASSERT(c);
+	ABL_ASSERT(c->size > 0);
 	ABL_ASSERT(out);
 	int off = 0;
-	fprintf(out, ".CODE SECTION\n");
-	while (off < c->size)
+	section_code section = (uint8_t)c->code[off++];
+	if (section == SECTION_CONSTANTS)
 	{
-		off = disassemble_instruction(c, out, off);
-		if (*(section_code*)&c->code[off] == SECTION_CONSTANTS)
-			break;
+		fprintf(out, ".CONSTANTS SECTION\n");
+		uint32_t const nb_constants = (uint32_t)c->code[off];
+		off += sizeof(uint32_t);
+		fprintf(out, "%d constants\n", nb_constants);
+		while (off < c->size)
+		{
+			off = disassemble_constant(c, out, off);
+		}
 	}
-	off++;
-	fprintf(out, ".CONSTANTS SECTION\n");
-	while (off < c->size)
+	if (section == SECTION_CODE)
 	{
-		off = disassemble_constant(c, out, off);
+		fprintf(out, ".CODE SECTION\n");
+		while (off < c->size)
+		{
+			off = disassemble_instruction(c, out, off);
+			if (*(section_code*)&c->code[off] == SECTION_CONSTANTS)
+				break;
+		}
 	}
 }
 
