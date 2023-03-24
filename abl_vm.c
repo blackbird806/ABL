@@ -11,6 +11,7 @@ void abl_vm_init(abl_vm* vm)
 	for (int i = 0; i < ABL_CALLSTACK_MAX; i++)
 	{
 		abl_value_array_init(&vm->callstack[i].constants);
+		abl_table_init(&vm->callstack[i].variables);
 	}
 
 	vm->current_frame = &vm->callstack[0];
@@ -80,6 +81,12 @@ abl_interpret_result abl_vm_interpret(abl_vm* vm, bytecode_chunk* chunk)
 		{
 		case OP_NOP:
 			continue;
+		case OP_STORE:
+		{
+				abl_string const* key = (abl_string*)pop(vm).v.o;
+				abl_table_set(&vm->current_frame->variables, key, pop(vm));
+		}
+			break;
 		case OP_PUSHC:
 		{
 			uint32_t const_id = read32(vm);

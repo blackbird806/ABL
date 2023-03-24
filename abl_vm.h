@@ -15,6 +15,7 @@ typedef struct
 {
 	bytecode_chunk* code_chunk;
 	abl_value_array constants;
+	abl_table variables;
 } abl_stack_frame;
 
 typedef struct 
