@@ -79,7 +79,7 @@ abl_value_array abl_value_array_move(abl_value_array* arr)
 static void grow_value_array(abl_value_array* arr)
 {
 	arr->capacity = arr->capacity < 8 ? 8 : arr->capacity * 2;
-	arr->values = ABL_REALLOC(arr->values, arr->capacity);
+	arr->values = ABL_REALLOC(arr->values, arr->capacity * sizeof(abl_value));
 	ABL_ASSERT(arr->values); // @Review we may want to handle failed alloc in another way
 }
 

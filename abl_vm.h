@@ -38,6 +38,8 @@ typedef enum
 	INTERPRET_RUNTIME_ERROR,
 } abl_interpret_result;
 
+abl_string allocate_string(abl_vm* vm, abl_char* chars, int size);
+
 void abl_vm_init(abl_vm* vm);
 void abl_vm_get_constants_from_compiler(abl_vm* vm, abl_compiler* compiler);
 void abl_vm_destroy(abl_vm* vm);

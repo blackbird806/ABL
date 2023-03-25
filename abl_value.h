@@ -43,7 +43,6 @@ typedef struct abl_value {
 	} v;
 } abl_value;
 
-abl_string allocate_string(struct abl_vm* vm, abl_char* chars, int size);
 uint32_t hash_string(const abl_char* str, int size);
 
 abl_value make_int(abl_int val);

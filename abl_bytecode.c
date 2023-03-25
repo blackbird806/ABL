@@ -4,11 +4,10 @@
 #include <stdbool.h>
 #include <string.h>
 
-// @Bug realloc seems to fail sometimes
 static void grow_chunk(bytecode_chunk* c)
 {
 	c->capacity = c->capacity < 8 ? 8 : c->capacity * 2;
-	c->code = (uint8_t*)ABL_REALLOC(c->code, c->capacity);
+	c->code = ABL_REALLOC(c->code, c->capacity);
 	ABL_ASSERT(c->code); // @Review we may want to handle failed alloc in another way
 }
 

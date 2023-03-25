@@ -49,7 +49,7 @@ static void error_at(abl_compiler* c, const char* msg, ...)
 	else
 	{
 		// @Bug this do not works
-		ABL_DEBUG_DIAGNOSTIC("at '%*.s' ", c->current.length, c->current.start);
+		//ABL_DEBUG_DIAGNOSTIC("at '%*.s' ", c->current.length, c->current.start);
 	}
 
 	va_list args;
@@ -57,7 +57,6 @@ static void error_at(abl_compiler* c, const char* msg, ...)
 	ABL_DEBUG_VDIAGNOSTIC(msg, args);
 	va_end(args);
 	ABL_DEBUG_DIAGNOSTIC("%s\n", "");
-	__debugbreak();
 }
 
 static uint32_t make_constant(abl_compiler* c, abl_value val)

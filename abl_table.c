@@ -1,4 +1,5 @@
 #include "abl_table.h"
+#include <string.h> 
 
 #define TABLE_MAX_LOAD 0.75
 
@@ -17,13 +18,13 @@ void abl_table_destroy(abl_table* table)
 	abl_table_init(table); // nullify the struct
 }
 
-static abl_table_entry* find_entry(abl_table_entry const* entries, uint32_t capacity, abl_string const* key)
+static abl_table_entry* find_entry(abl_table_entry* entries, uint32_t capacity, abl_string const* key)
 {
 	uint32_t index = key->hash % capacity;
 	while (true)
 	{
-		abl_table_entry const* entry = &entries[index];
-		abl_table_entry const* tombstone = NULL;
+		abl_table_entry* entry = &entries[index];
+		abl_table_entry* tombstone = NULL;
 		if (entry->key == NULL)
 		{
 			if (entry->value.type == VAL_NULL)
