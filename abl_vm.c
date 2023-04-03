@@ -74,7 +74,7 @@ abl_interpret_result abl_vm_interpret(abl_vm* vm, bytecode_chunk* chunk)
 	ABL_ASSERT(chunk);
 
 	vm->pc = ++chunk->code; // skip section name
-	while (true)
+	while (vm->pc != chunk->code + chunk->size)
 	{
 		uint8_t const instruction = *vm->pc++;
 		switch (instruction)
@@ -83,7 +83,8 @@ abl_interpret_result abl_vm_interpret(abl_vm* vm, bytecode_chunk* chunk)
 			continue;
 		case OP_STORE:
 		{
-			abl_string* key = (abl_string*)pop(vm).v.o;
+			uint32_t const_id = read32(vm);
+			abl_string* key = (abl_string*)vm->current_frame->constants.values[const_id].v.o;
 			abl_table_set(&vm->current_frame->variables, key, pop(vm));
 			break;
 		}

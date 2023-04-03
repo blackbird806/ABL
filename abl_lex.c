@@ -66,6 +66,7 @@ abl_bool token_as_bool(lexer* lex, token t)
 	return (lex->src + t.start)[0] == 't';
 }
 
+// @Review this
 abl_string* token_as_string(lexer* lex, token t)
 {
 	abl_string* str = ABL_MALLOC(sizeof(abl_string));

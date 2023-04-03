@@ -22,7 +22,7 @@ typedef enum {
 	PREC_PRIMARY
 } precedence;
 
-typedef void (*parse_fn)(abl_compiler*);
+typedef void (*parse_fn)(abl_compiler*, bool);
 
 typedef struct
 {
@@ -57,6 +57,7 @@ static void error_at(abl_compiler* c, const char* msg, ...)
 	ABL_DEBUG_VDIAGNOSTIC(msg, args);
 	va_end(args);
 	ABL_DEBUG_DIAGNOSTIC("%s\n", "");
+	ABL_ASSERT(false);
 }
 
 static uint32_t make_constant(abl_compiler* c, abl_value val)
@@ -90,6 +91,28 @@ static void consume(abl_compiler* c, token_type t)
 	}
 }
 
+// @review https://craftinginterpreters.com/global-variables.html#error-synchronization
+static void synchronize(abl_compiler* c)
+{
+	c->had_error = false;
+
+	while (c->current.type != TK_EOF)
+	{
+		switch (c->current.type)
+		{
+		case TK_IF:
+		case TK_FN:
+		case TK_FOR:
+		case TK_WHILE:
+		case TK_RETURN:
+			return;
+		default:
+			break;
+		}
+		advance(c);
+	}
+}
+
 static void parse_precedence(abl_compiler* c, precedence prec)
 {
 	advance(c);
@@ -99,13 +122,20 @@ static void parse_precedence(abl_compiler* c, precedence prec)
 		error_at(c, "expression expected");
 		return;
 	}
-	prefix_rule(c);
+
+	bool const canAssign = prec <= PREC_ASSIGNMENT;
+	prefix_rule(c, canAssign);
 
 	while (prec <= get_rule(peek_token(&c->lex, 1).type)->prec)
 	{
 		advance(c);
 		parse_fn const infix_rule = get_rule(c->current.type)->infix;
-		infix_rule(c);
+		infix_rule(c, canAssign);
+	}
+
+	if (canAssign && c->current.type == TK_EQUAL)
+	{
+		error_at(c, "invalid assignement target");
 	}
 }
 
@@ -114,13 +144,13 @@ static void expression(abl_compiler* c)
 	parse_precedence(c, PREC_ASSIGNMENT);
 }
 
-static void grouping(abl_compiler* c)
+static void grouping(abl_compiler* c, bool canAssign)
 {
 	expression(c);
 	consume(c, TK_CLOSE_PAREN);
 }
 
-static void binary(abl_compiler* c)
+static void binary(abl_compiler* c, bool canAssign)
 {
 	token_type const op_type = c->current.type;
 	parse_rule const* rule = get_rule(op_type);
@@ -137,7 +167,7 @@ static void binary(abl_compiler* c)
 	}
 }
 
-static void unary(abl_compiler* c)
+static void unary(abl_compiler* c, bool canAssign)
 {
 	token_type const op_type = c->current.type;
 	parse_precedence(c, PREC_UNARY);
@@ -158,24 +188,31 @@ static void unary(abl_compiler* c)
 	}
 }
 
-static void primary(abl_compiler* c)
+static void int_literal(abl_compiler* c, bool canAssign)
 {
-	switch(c->current.type)
-	{
-		case TK_INT:
-			emit_constant(c, make_int(token_as_int(&c->lex, c->current)));
-		break;
-		case TK_TRUE:
-		case TK_FALSE:
-			emit_constant(c, make_bool(token_as_bool(&c->lex, c->current)));
-			break;
-		case TK_STRING:
-			emit_constant(c, make_string(token_as_string(&c->lex, c->current)));
-			break;
-		default:
-			ABL_ASSERT(false); // unreachable
-		break;
-	}
+	emit_constant(c, make_int(token_as_int(&c->lex, c->current)));
+}
+
+static void float_literal(abl_compiler* c, bool canAssign)
+{
+	//emit_constant(c, make_float(token_as_float(&c->lex, c->current)));
+	ABL_ASSERT(false);
+}
+
+static void string_literal(abl_compiler* c, bool canAssign)
+{
+	emit_constant(c, make_string(token_as_string(&c->lex, c->current)));
+}
+
+static void bool_literal(abl_compiler* c, bool canAssign)
+{
+	emit_constant(c, make_bool(c->current.type == TK_TRUE));
+}
+
+static void variable(abl_compiler* c, bool canAssign)
+{
+	write_chunk(&c->code_chunk, OP_LOAD);
+	//write4_chunk(&c->code_chunk, c->constants)
 }
 
 parse_rule rules[] = {
@@ -198,13 +235,13 @@ parse_rule rules[] = {
   [TK_GREATER_EQUAL] = {NULL,     NULL,   PREC_NONE},
   [TK_LESS] = {NULL,     NULL,   PREC_NONE},
   [TK_LESS_EQUAL] = {NULL,     NULL,   PREC_NONE},
-  [TK_IDENTIFIER] = {primary,     NULL,   PREC_NONE},
-  [TK_STRING] = {primary,     NULL,   PREC_NONE},
-  [TK_INT] = {primary,   NULL,   PREC_NONE},
-  [TK_FLOAT] = {primary,   NULL,   PREC_NONE},
+  [TK_IDENTIFIER] = {variable,     NULL,   PREC_NONE},
+  [TK_STRING] = {string_literal,     NULL,   PREC_NONE},
+  [TK_INT] = {int_literal,   NULL,   PREC_NONE},
+  [TK_FLOAT] = {float_literal,   NULL,   PREC_NONE},
   [TK_AND] = {NULL,     NULL,   PREC_NONE},
   [TK_ELSE] = {NULL,     NULL,   PREC_NONE},
-  [TK_FALSE] = {NULL,     NULL,   PREC_NONE},
+  [TK_FALSE] = {bool_literal,     NULL,   PREC_NONE},
   [TK_FOR] = {NULL,     NULL,   PREC_NONE},
   [TK_FN] = {NULL,     NULL,   PREC_NONE},
   [TK_IF] = {NULL,     NULL,   PREC_NONE},
@@ -212,7 +249,7 @@ parse_rule rules[] = {
   [TK_RETURN] = {NULL,     NULL,   PREC_NONE},
   [TK_OR] = {NULL,     NULL,   PREC_NONE},
   [TK_BOOL] = {NULL,     NULL,   PREC_NONE},
-  [TK_TRUE] = {NULL,     NULL,   PREC_NONE},
+  [TK_TRUE] = {bool_literal,     NULL,   PREC_NONE},
   [TK_WHILE] = {NULL,     NULL,   PREC_NONE},
   [TK_ERR] = {NULL,     NULL,   PREC_NONE},
   [TK_EOF] = {NULL,     NULL,   PREC_NONE},
@@ -252,20 +289,21 @@ static void constant(abl_compiler* c, abl_value val)
 	}
 }
 
-static void statement(abl_compiler* c);
-
 static void expr_statement(abl_compiler* c)
 {
 	expression(c);
 	consume(c, TK_SEMICOLON);
+	write_chunk(&c->code_chunk, OP_POP);
 }
+
+static void declaration(abl_compiler* c);
 
 static void block_statement(abl_compiler* c)
 {
 	consume(c, TK_OPEN_BRACE);
 	while (peek(c, 1).type != TK_CLOSE_BRACE)
 	{
-		statement(c);
+		declaration(c);
 	}
 	advance(c); // pass close bracket
 }
@@ -303,6 +341,34 @@ static void statement(abl_compiler* c)
 	}
 }
 
+static uint32_t parse_variable(abl_compiler* c)
+{
+	uint32_t const const_id = make_constant(c, make_string(token_as_string(&c->lex, c->current)));
+	return const_id;
+}
+
+static void var_assignement(abl_compiler* c)
+{
+	uint32_t const global = parse_variable(c);
+	consume(c, TK_EQUAL);
+	expression(c);
+	consume(c, TK_SEMICOLON);
+	write_chunk(&c->code_chunk, OP_STORE);
+	write4_chunk(&c->code_chunk, global);
+}
+
+static void declaration(abl_compiler* c)
+{
+	advance(c);
+	if (c->current.type == TK_IDENTIFIER && peek_token(&c->lex, 1).type == TK_EQUAL)
+		var_assignement(c);
+	else
+		statement(c);
+
+	if (c->had_error)
+		synchronize(c);
+}
+
 static void compile_constants(abl_compiler* c)
 {
 	write_chunk(&c->constants_chunk, SECTION_CONSTANTS);
@@ -329,6 +395,13 @@ void compile(const char* src, FILE* out)
 	disassemble_chunk(&c.constants_chunk, out);
 	disassemble_chunk(&c.code_chunk, out);
 
+	for (int i = 0; i < c.code_chunk.size; i++)
+	{
+		if (i % 16 == 0)
+			printf("\n");
+		printf("%02X ", c.code_chunk.code[i]);
+	}
+
 	abl_vm vm;
 	abl_vm_init(&vm);
 	abl_vm_get_constants_from_compiler(&vm, &c);
@@ -336,10 +409,5 @@ void compile(const char* src, FILE* out)
 	abl_vm_interpret(&vm, &c.code_chunk);
 
 	abl_vm_destroy(&vm);
-	//for (int i = 0; i < c.code_chunk.size; i++)
-	//{
-	//	if (i % 16 == 0)
-	//		printf("\n");
-	//	printf("%02X ", c.code_chunk.code[i]);
-	//}
+
 }
