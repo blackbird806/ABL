@@ -67,6 +67,7 @@ static void read_constants(abl_vm* vm, bytecode_chunk* c)
 }
 
 #define BIN_OP(OP) {abl_value a = pop(vm), b = pop(vm); if (a.type == VAL_FLOAT || b.type == VAL_FLOAT) { push(vm, make_float(a.v.f OP b.v.f)); } else { push(vm, make_int(a.v.i OP b.v.i)); }}
+#define BIN_OPR(OP) {abl_value a = pop(vm), b = pop(vm); if (a.type == VAL_FLOAT || b.type == VAL_FLOAT) { push(vm, make_float(b.v.f OP a.v.f)); } else { push(vm, make_int(b.v.i OP a.v.i)); }}
 
 abl_interpret_result abl_vm_interpret(abl_vm* vm, bytecode_chunk* chunk)
 {
@@ -109,13 +110,13 @@ abl_interpret_result abl_vm_interpret(abl_vm* vm, bytecode_chunk* chunk)
 			BIN_OP(+)
 			break;
 		case OP_SUB:
-			BIN_OP(-)
+			BIN_OPR(-)
 			break;
 		case OP_MUL:
 			BIN_OP(*)
 			break;
 		case OP_DIV:
-			BIN_OP(/)
+			BIN_OPR(/)
 			break;
 		case OP_NEG:
 			if (vm->stack_top->type == VAL_INT) vm->stack_top->v.i = -vm->stack_top->v.i;

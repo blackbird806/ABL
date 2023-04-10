@@ -153,7 +153,7 @@ static void binary(abl_compiler* c, bool canAssign)
 {
 	token_type const op_type = c->current.type;
 	parse_rule const* rule = get_rule(op_type);
-	parse_precedence(c, rule->prec);
+	parse_precedence(c, rule->prec + 1);
 
 	switch (op_type)
 	{

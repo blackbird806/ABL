@@ -21,10 +21,10 @@ void abl_table_destroy(abl_table* table)
 static abl_table_entry* find_entry(abl_table_entry* entries, uint32_t capacity, abl_string const* key)
 {
 	uint32_t index = key->hash % capacity;
+	abl_table_entry* tombstone = NULL;
 	while (true)
 	{
 		abl_table_entry* entry = &entries[index];
-		abl_table_entry* tombstone = NULL;
 		if (entry->key == NULL)
 		{
 			if (entry->value.type == VAL_NULL)
@@ -47,6 +47,7 @@ static abl_table_entry* find_entry(abl_table_entry* entries, uint32_t capacity, 
 static void adjust_capacity(abl_table* table, uint32_t capacity)
 {
 	abl_table_entry* entries = ABL_MALLOC(capacity * sizeof(abl_table_entry));
+	ABL_ASSERT(entries);
 	for (uint32_t i = 0; i < capacity; i++)
 	{
 		entries[i].key = NULL;
