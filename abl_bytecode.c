@@ -127,8 +127,6 @@ void disassemble_chunk(bytecode_chunk* c, FILE* out)
 		while (off < c->size)
 		{
 			off = disassemble_instruction(c, out, off);
-			if (*(section_code*)&c->code[off] == SECTION_CONSTANTS)
-				break;
 		}
 	}
 }
@@ -148,6 +146,16 @@ static int constant_instruction(bytecode_chunk* chunk, FILE* out, int offset)
 	return offset;
 }
 
+static int store_instruction(bytecode_chunk* chunk, FILE* out, int offset)
+{
+	fprintf(out, "STORE ");
+	offset++;
+	fprintf(out, "%d\n", *(uint32_t*)&chunk->code[offset]);
+	offset += sizeof(uint32_t);
+	return offset;
+}
+
+
 int disassemble_instruction(bytecode_chunk* c, FILE* out, int offset)
 {
 	#define SIMPLE_INSTRUCTION(name) case OP_##name : return simple_instruction(#name, out, offset)
@@ -164,6 +172,8 @@ int disassemble_instruction(bytecode_chunk* c, FILE* out, int offset)
 		SIMPLE_INSTRUCTION(DIV);
 		SIMPLE_INSTRUCTION(PUSH);
 		SIMPLE_INSTRUCTION(POP);
+		case OP_STORE:
+			return store_instruction(c, out, offset);
 		case OP_PUSHC:
 			return constant_instruction(c, out, offset);
 	}

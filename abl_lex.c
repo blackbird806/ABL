@@ -239,7 +239,6 @@ static token lex_num(lexer* lex)
 static token lex_identifier_or_keyword(lexer* lex)
 {
 	const char* start = lex->current;
-	lex->current++;
 	while(isalnum(*lex->current) || *lex->current == '_')
 		lex->current++;
 
@@ -254,7 +253,7 @@ static token lex_token_impl(lexer* lex)
 
 	lex->start = lex->current;
 	char const c = *lex->current++;
-	printf("[lexer] current char %c\n", c);
+	//printf("[lexer] current char %c\n", c);
 	switch (c) {
 	case '(': return make_token(lex, TK_OPEN_PAREN);
 	case ')': return make_token(lex, TK_CLOSE_PAREN);

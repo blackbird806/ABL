@@ -79,7 +79,7 @@ bool abl_table_set(abl_table* table, abl_string* key, abl_value value)
 
 	if (table->size + 1 > table->capacity * TABLE_MAX_LOAD)
 	{
-		uint32_t const new_capacity = table->capacity > 8 ? 8 : table->capacity * 2;
+		uint32_t const new_capacity = table->capacity < 8 ? 8 : table->capacity * 2;
 		adjust_capacity(table, new_capacity);
 	}
 

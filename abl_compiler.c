@@ -115,8 +115,7 @@ static void synchronize(abl_compiler* c)
 
 static void parse_precedence(abl_compiler* c, precedence prec)
 {
-	advance(c);
-	parse_fn const prefix_rule = get_rule(c->current.type)->prefix;
+	parse_fn const prefix_rule = get_rule(advance(c).type)->prefix;
 	if (prefix_rule == NULL)
 	{
 		error_at(c, "expression expected");
@@ -336,8 +335,8 @@ static void statement(abl_compiler* c)
 	case TK_OPEN_BRACE:
 		block_statement(c);
 		break;
-		default:
-			expr_statement(c);
+	default:
+		expr_statement(c);
 	}
 }
 
@@ -409,5 +408,4 @@ void compile(const char* src, FILE* out)
 	abl_vm_interpret(&vm, &c.code_chunk);
 
 	abl_vm_destroy(&vm);
-
 }
