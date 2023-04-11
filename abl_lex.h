@@ -21,6 +21,7 @@ typedef enum token_type {
 	TK_STRING, TK_INT, TK_FLOAT,
 
 	// keywords
+	TK_VAR,
 	TK_FN, TK_IF, TK_ELSE, TK_WHILE, TK_FOR, TK_BOOL, TK_TRUE, TK_FALSE,
 	TK_NULL, TK_IMPORT, TK_RETURN,
 

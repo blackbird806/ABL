@@ -11,20 +11,17 @@
 #define ABL_CALLSTACK_MAX 128
 #define ABL_MAX_CONSTANTS 256
 
-typedef struct
-{
-	bytecode_chunk* code_chunk;
-	abl_value_array constants;
-	abl_table variables;
-} abl_stack_frame;
-
 typedef struct 
 {
 	abl_value stack[ABL_STACK_MAX];
 	abl_value* stack_top;
 
-	abl_stack_frame callstack[ABL_CALLSTACK_MAX];
-	abl_stack_frame* current_frame;
+	//abl_stack_frame callstack[ABL_CALLSTACK_MAX];
+	bytecode_chunk* code_chunk;
+
+	abl_table global_variables;
+
+	abl_value_array constants;
 
 	abl_table strings;
 

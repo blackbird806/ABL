@@ -38,6 +38,7 @@ const char* token_type_to_string(token_type t)
 		TK_STR(TK_INT),
 		TK_STR(TK_FLOAT),
 		TK_STR(TK_BOOL),
+		TK_STR(TK_VAR),
 		TK_STR(TK_FN),
 		TK_STR(TK_IF),
 		TK_STR(TK_ELSE),
@@ -138,6 +139,7 @@ static const char* get_keyword_str_from_type(token_type t)
 {
 	switch(t)
 	{
+		case TK_VAR: return "var";
 		case TK_IF: return "if";
 		case TK_FOR: return "for";
 		case TK_WHILE: return "while";
@@ -195,6 +197,7 @@ static token_type get_word_token_type(lexer* lex)
 		case 'w': return check_keyword(lex, 1, 4, "hile", TK_WHILE);
 		case 'n': return check_keyword(lex, 1, 3, "ull", TK_NULL);
 		case 't': return check_keyword(lex, 1, 3, "rue", TK_TRUE);
+		case 'v': return check_keyword(lex, 1, 3, "ar", TK_VAR);
 	}
 	return TK_IDENTIFIER;
 }

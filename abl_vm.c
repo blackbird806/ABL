@@ -8,20 +8,15 @@ void abl_vm_init(abl_vm* vm)
 
 	abl_table_init(&vm->strings);
 
-	for (int i = 0; i < ABL_CALLSTACK_MAX; i++)
-	{
-		abl_value_array_init(&vm->callstack[i].constants);
-		abl_table_init(&vm->callstack[i].variables);
-	}
-
-	vm->current_frame = &vm->callstack[0];
+	abl_value_array_init(&vm->constants);
+	abl_table_init(&vm->global_variables);
 }
 
 void abl_vm_get_constants_from_compiler(abl_vm* vm, abl_compiler* compiler)
 {
 	ABL_ASSERT(vm);
 	ABL_ASSERT(compiler);
-	vm->callstack[0].constants = abl_value_array_move(&compiler->constants);
+	vm->constants = abl_value_array_move(&compiler->constants);
 }
 
 void abl_vm_destroy(abl_vm* vm)
@@ -85,22 +80,22 @@ abl_interpret_result abl_vm_interpret(abl_vm* vm, bytecode_chunk* chunk)
 		case OP_STORE:
 		{
 			uint32_t const_id = read32(vm);
-			abl_string* key = (abl_string*)vm->current_frame->constants.values[const_id].v.o;
-			abl_table_set(&vm->current_frame->variables, key, pop(vm));
+			abl_string* key = (abl_string*)vm->constants.values[const_id].v.o;
+			abl_table_set(&vm->global_variables, key, pop(vm));
 			break;
 		}
 		case OP_LOAD:
 		{
 			abl_string const* key = (abl_string*)pop(vm).v.o;
 			abl_value val = make_null();
-			abl_table_get(&vm->current_frame->variables, key, &val);
+			abl_table_get(&vm->global_variables, key, &val);
 			push(vm, val);
 			break;
 		}
 		case OP_PUSHC:
 		{
 			uint32_t const_id = read32(vm);
-			push(vm, vm->current_frame->constants.values[const_id]);
+			push(vm, vm->constants.values[const_id]);
 			break;
 		}
 		case OP_POP:

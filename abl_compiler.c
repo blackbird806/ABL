@@ -60,6 +60,12 @@ static void error_at(abl_compiler* c, const char* msg, ...)
 	ABL_ASSERT(false);
 }
 
+static void init_frame(frame* f)
+{
+	f->local_count = 0;
+	f->scope_depth = 0;
+}
+
 static uint32_t make_constant(abl_compiler* c, abl_value val)
 {
 	abl_value_array_add(&c->constants, val);
@@ -299,12 +305,14 @@ static void declaration(abl_compiler* c);
 
 static void block_statement(abl_compiler* c)
 {
+	c->current_frame.scope_depth++;
 	consume(c, TK_OPEN_BRACE);
 	while (peek(c, 1).type != TK_CLOSE_BRACE)
 	{
 		declaration(c);
 	}
 	advance(c); // pass close bracket
+	c->current_frame.scope_depth--;
 }
 
 static void if_statement(abl_compiler* c)
@@ -346,9 +354,25 @@ static uint32_t parse_variable(abl_compiler* c)
 	return const_id;
 }
 
-static void var_assignement(abl_compiler* c)
+static uint32_t get_variable(abl_compiler* c)
+{
+	return parse_variable(c);
+}
+
+static void var_decl(abl_compiler* c)
 {
 	uint32_t const global = parse_variable(c);
+	if (advance(c).type == TK_EQUAL)
+		expression(c);
+
+	consume(c, TK_SEMICOLON);
+	write_chunk(&c->code_chunk, OP_STORE);
+	write4_chunk(&c->code_chunk, global);
+}
+
+static void var_assignement(abl_compiler* c)
+{
+	uint32_t const global = get_variable(c);
 	consume(c, TK_EQUAL);
 	expression(c);
 	consume(c, TK_SEMICOLON);
@@ -386,6 +410,8 @@ void compile(const char* src, FILE* out)
 	abl_value_array_init(&c.constants);
 	init_chunk(&c.code_chunk);
 	init_chunk(&c.constants_chunk);
+	init_frame(&c.current_frame);
+
 	c.had_error = false;
 	write_chunk(&c.code_chunk, SECTION_CODE);
 	statement(&c);
