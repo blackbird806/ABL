@@ -359,17 +359,6 @@ static uint32_t get_variable(abl_compiler* c)
 	return parse_variable(c);
 }
 
-static void var_decl(abl_compiler* c)
-{
-	uint32_t const global = parse_variable(c);
-	if (advance(c).type == TK_EQUAL)
-		expression(c);
-
-	consume(c, TK_SEMICOLON);
-	write_chunk(&c->code_chunk, OP_STORE);
-	write4_chunk(&c->code_chunk, global);
-}
-
 static void var_assignement(abl_compiler* c)
 {
 	uint32_t const global = get_variable(c);
@@ -380,10 +369,30 @@ static void var_assignement(abl_compiler* c)
 	write4_chunk(&c->code_chunk, global);
 }
 
+static void var_decl(abl_compiler* c)
+{
+	uint32_t const global = parse_variable(c);
+	advance(c); // skip  var id
+	if (peek_token(&c->lex, 1).type == TK_EQUAL)
+	{
+		advance(c); // skip  equal
+		expression(c);
+		write_chunk(&c->code_chunk, OP_STORE);
+	}
+	else
+	{
+		write_chunk(&c->code_chunk, OP_VARDECL);
+	}
+	write4_chunk(&c->code_chunk, global);
+	consume(c, TK_SEMICOLON);
+}
+
 static void declaration(abl_compiler* c)
 {
 	advance(c);
-	if (c->current.type == TK_IDENTIFIER && peek_token(&c->lex, 1).type == TK_EQUAL)
+	if (c->current.type == TK_VAR)
+		var_decl(c);
+	else if (c->current.type == TK_IDENTIFIER && peek_token(&c->lex, 1).type == TK_EQUAL)
 		var_assignement(c);
 	else
 		statement(c);

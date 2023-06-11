@@ -12,6 +12,7 @@ typedef enum {
 typedef enum {
 	
 	OP_NOP,
+	OP_VARDECL,
 	OP_STORE, OP_LOAD,
 	OP_ADD, OP_SUB, OP_DIV, OP_MUL,
 	OP_PUSHC,

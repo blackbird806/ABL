@@ -4,7 +4,7 @@ ABL is a small and experimental scripting language inspired by [lua](https://www
 
 
 
-```js
+```lua
 import std.io;
 
 fn main(args) {

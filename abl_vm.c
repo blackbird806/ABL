@@ -77,9 +77,19 @@ abl_interpret_result abl_vm_interpret(abl_vm* vm, bytecode_chunk* chunk)
 		{
 		case OP_NOP:
 			continue;
+		case OP_VARDECL:
+		{
+			uint32_t const const_id = read32(vm);
+			abl_string* key = (abl_string*)vm->constants.values[const_id].v.o;
+			if (!abl_table_set(&vm->global_variables, key, make_null()))
+			{
+				ABL_DEBUG_DIAGNOSTIC("var '%.*s' already declared", key->size, key->data);
+			}
+			break;
+		}
 		case OP_STORE:
 		{
-			uint32_t const_id = read32(vm);
+			uint32_t const const_id = read32(vm);
 			abl_string* key = (abl_string*)vm->constants.values[const_id].v.o;
 			abl_table_set(&vm->global_variables, key, pop(vm));
 			break;

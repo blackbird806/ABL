@@ -197,7 +197,7 @@ static token_type get_word_token_type(lexer* lex)
 		case 'w': return check_keyword(lex, 1, 4, "hile", TK_WHILE);
 		case 'n': return check_keyword(lex, 1, 3, "ull", TK_NULL);
 		case 't': return check_keyword(lex, 1, 3, "rue", TK_TRUE);
-		case 'v': return check_keyword(lex, 1, 3, "ar", TK_VAR);
+		case 'v': return check_keyword(lex, 1, 2, "ar", TK_VAR);
 	}
 	return TK_IDENTIFIER;
 }
@@ -256,7 +256,7 @@ static token lex_token_impl(lexer* lex)
 
 	lex->start = lex->current;
 	char const c = *lex->current++;
-	//printf("[lexer] current char %c\n", c);
+	// printf("[lexer] current char %c\n", c);
 	switch (c) {
 	case '(': return make_token(lex, TK_OPEN_PAREN);
 	case ')': return make_token(lex, TK_CLOSE_PAREN);
