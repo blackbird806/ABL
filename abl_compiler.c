@@ -350,7 +350,7 @@ static void statement(abl_compiler* c)
 
 static uint32_t parse_variable(abl_compiler* c)
 {
-	uint32_t const const_id = make_constant(c, make_string(token_as_string(&c->lex, c->current)));
+	uint32_t const const_id = make_constant(c, make_string(token_as_string(&c->lex, advance(c))));
 	return const_id;
 }
 
@@ -371,11 +371,11 @@ static void var_assignement(abl_compiler* c)
 
 static void var_decl(abl_compiler* c)
 {
+	consume(c, TK_VAR);
 	uint32_t const global = parse_variable(c);
-	advance(c); // skip  var id
 	if (peek_token(&c->lex, 1).type == TK_EQUAL)
 	{
-		advance(c); // skip  equal
+		consume(c, TK_EQUAL);
 		expression(c);
 		write_chunk(&c->code_chunk, OP_STORE);
 	}
@@ -389,10 +389,10 @@ static void var_decl(abl_compiler* c)
 
 static void declaration(abl_compiler* c)
 {
-	advance(c);
-	if (c->current.type == TK_VAR)
+	token const next = peek(c, 1);
+	if (next.type == TK_VAR)
 		var_decl(c);
-	else if (c->current.type == TK_IDENTIFIER && peek_token(&c->lex, 1).type == TK_EQUAL)
+	else if (next.type == TK_IDENTIFIER && peek(c, 2).type == TK_EQUAL)
 		var_assignement(c);
 	else
 		statement(c);

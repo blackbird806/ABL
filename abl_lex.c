@@ -295,7 +295,11 @@ token lex_token(lexer* lex)
 
 	if (lex->lookahead_idx >= 0)
 	{
-		return lex->lookahead[lex->lookahead_idx--];
+		token const tk = lex->lookahead[0];
+		// @Review change this by another index ?
+		memmove(&lex->lookahead[0], &lex->lookahead[1], (LOOKAHEADSIZE-1) * sizeof(token));
+		lex->lookahead_idx--;
+		return tk;
 	}
 
 	return lex_token_impl(lex);

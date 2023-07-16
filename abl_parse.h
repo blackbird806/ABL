@@ -10,7 +10,7 @@
  * 	it is used to help implementation.
  *
  *  decl ::= fn_decl | var_decl | stmt
- *	var_decl ::= IDENTIFIER "=" exp ";"
+ *	var_decl ::= "var" IDENTIFIER ("=" exp) ";"
  *	fn_decl ::= "fn" IDENTIFIER "(" parameters* ")" block
  *	parameters ::= IDENTIFIER ( "," IDENTIFIER)*
  *
@@ -20,8 +20,8 @@
  *	return ::= "return" expr ";"
  *	block ::= "{" decl* "}"
  *
- *	expr ::= assignement | primary
- *	assignement ::= IDENTIFIER "=" expr 
+ *	expr ::= assignement | primary | expr binop expr | unop expr
+ *	assignement ::= IDENTIFIER "=" expr
  *	primary ::= "true" | "false" | "null" | NUMBER | STRING | IDENTIFIER
  *	
  * */
