@@ -35,15 +35,15 @@ static parse_rule* get_rule(token_type type);
 
 static void error_at(abl_compiler* c, const char* msg, ...)
 {
-	ABL_DEBUG_DIAGNOSTIC("[line %d] error ", c->current.line);
+	ABL_DEBUG_DIAGNOSTIC("[line %d] error ", c->last.line);
 	c->had_error = true;
 	
-	if (c->current.type == TK_EOF)
+	if (c->last.type == TK_EOF)
 	{
 		// @TODO do this cleanly
 		ABL_DEBUG_DIAGNOSTIC("end of file %s", "");
 	} 
-	else if (c->current.type == TK_ERR) 
+	else if (c->last.type == TK_ERR)
 	{
 	}
 	else
@@ -80,8 +80,8 @@ static void emit_constant(abl_compiler* c, abl_value val)
 
 static token advance(abl_compiler* c)
 {
-	c->current = lex_token(&c->lex);
-	return c->current;
+	c->last = lex_token(&c->lex);
+	return c->last;
 }
 
 static token peek(abl_compiler* c, int i)
@@ -93,7 +93,7 @@ static void consume(abl_compiler* c, token_type t)
 {
 	if (advance(c).type != t)
 	{
-		error_at(c, "expected '%s' got '%s' instead", token_type_to_string(t), token_type_to_string(c->current.type));
+		error_at(c, "expected '%s' got '%s' instead", token_type_to_string(t), token_type_to_string(c->last.type));
 	}
 }
 
@@ -102,9 +102,9 @@ static void synchronize(abl_compiler* c)
 {
 	c->had_error = false;
 
-	while (c->current.type != TK_EOF)
+	while (c->last.type != TK_EOF)
 	{
-		switch (c->current.type)
+		switch (c->last.type)
 		{
 		case TK_IF:
 		case TK_FN:
@@ -134,11 +134,11 @@ static void parse_precedence(abl_compiler* c, precedence prec)
 	while (prec <= get_rule(peek_token(&c->lex, 1).type)->prec)
 	{
 		advance(c);
-		parse_fn const infix_rule = get_rule(c->current.type)->infix;
+		parse_fn const infix_rule = get_rule(c->last.type)->infix;
 		infix_rule(c, canAssign);
 	}
 
-	if (canAssign && c->current.type == TK_EQUAL)
+	if (canAssign && c->last.type == TK_EQUAL)
 	{
 		error_at(c, "invalid assignement target");
 	}
@@ -157,7 +157,7 @@ static void grouping(abl_compiler* c, bool canAssign)
 
 static void binary(abl_compiler* c, bool canAssign)
 {
-	token_type const op_type = c->current.type;
+	token_type const op_type = c->last.type;
 	parse_rule const* rule = get_rule(op_type);
 	parse_precedence(c, rule->prec + 1);
 
@@ -174,7 +174,7 @@ static void binary(abl_compiler* c, bool canAssign)
 
 static void unary(abl_compiler* c, bool canAssign)
 {
-	token_type const op_type = c->current.type;
+	token_type const op_type = c->last.type;
 	parse_precedence(c, PREC_UNARY);
 
 	switch (op_type)
@@ -195,7 +195,7 @@ static void unary(abl_compiler* c, bool canAssign)
 
 static void int_literal(abl_compiler* c, bool canAssign)
 {
-	emit_constant(c, make_int(token_as_int(&c->lex, c->current)));
+	emit_constant(c, make_int(token_as_int(&c->lex, c->last)));
 }
 
 static void float_literal(abl_compiler* c, bool canAssign)
@@ -206,18 +206,56 @@ static void float_literal(abl_compiler* c, bool canAssign)
 
 static void string_literal(abl_compiler* c, bool canAssign)
 {
-	emit_constant(c, make_string(token_as_string(&c->lex, c->current)));
+	emit_constant(c, make_string(allocate_string(&c->sym_table, &c->lex.src[c->last.start], c->last.length)));
 }
 
 static void bool_literal(abl_compiler* c, bool canAssign)
 {
-	emit_constant(c, make_bool(c->current.type == TK_TRUE));
+	emit_constant(c, make_bool(c->last.type == TK_TRUE));
+}
+
+static uint32_t parse_variable(abl_compiler* c)
+{
+	advance(c);
+	return make_constant(c, make_string(allocate_string(&c->sym_table, &c->lex.src[c->last.start], c->last.length)));
+}
+
+static uint32_t get_variable(abl_compiler* c)
+{
+	return parse_variable(c);
+}
+
+static bool identifier_equal(abl_compiler* c, token a, token b)
+{
+	if (a.length != b.length)
+		return false;
+	return memcmp(&c->lex.src[a.start], &c->lex.src[b.start], a.length) == 0;
+}
+
+static int resolve_local(abl_compiler* c, token name)
+{
+	for (int i = c->current_frame.local_count; i >= 0; i--)
+	{
+		local* l = &c->current_frame.locals[i];
+		if (identifier_equal(c, name, l->name))
+			return i;
+	}
+	return -1;
 }
 
 static void variable(abl_compiler* c, bool canAssign)
 {
-	write_chunk(&c->code_chunk, OP_LOAD);
-	//write4_chunk(&c->code_chunk, c->constants)
+	int32_t const arg = resolve_local(c, c->last);
+	if (arg != -1)
+	{
+		write_chunk(&c->code_chunk, OP_LOAD_LOCAL);
+		write4_chunk(&c->code_chunk, arg);
+	}
+	else
+	{
+		write_chunk(&c->code_chunk, OP_LOAD);
+		write4_chunk(&c->code_chunk, get_variable(c, c->last));
+	}
 }
 
 parse_rule rules[] = {
@@ -303,16 +341,32 @@ static void expr_statement(abl_compiler* c)
 
 static void declaration(abl_compiler* c);
 
-static void block_statement(abl_compiler* c)
+static void begin_scope(abl_compiler* c)
 {
 	c->current_frame.scope_depth++;
+}
+
+static void end_scope(abl_compiler* c)
+{
+	c->current_frame.scope_depth--;
+	while (c->current_frame.local_count > 0 &&
+		c->current_frame.locals[c->current_frame.local_count - 1].depth > c->current_frame.scope_depth)
+	{
+		write_chunk(&c->code_chunk, OP_POP);
+		c->current_frame.local_count--;
+	}
+}
+
+static void block_statement(abl_compiler* c)
+{
+	begin_scope(c);
 	consume(c, TK_OPEN_BRACE);
 	while (peek(c, 1).type != TK_CLOSE_BRACE)
 	{
 		declaration(c);
 	}
 	advance(c); // pass close bracket
-	c->current_frame.scope_depth--;
+	end_scope(c);
 }
 
 static void if_statement(abl_compiler* c)
@@ -348,17 +402,6 @@ static void statement(abl_compiler* c)
 	}
 }
 
-static uint32_t parse_variable(abl_compiler* c)
-{
-	uint32_t const const_id = make_constant(c, make_string(token_as_string(&c->lex, advance(c))));
-	return const_id;
-}
-
-static uint32_t get_variable(abl_compiler* c)
-{
-	return parse_variable(c);
-}
-
 static void var_assignement(abl_compiler* c)
 {
 	uint32_t const global = get_variable(c);
@@ -367,6 +410,37 @@ static void var_assignement(abl_compiler* c)
 	consume(c, TK_SEMICOLON);
 	write_chunk(&c->code_chunk, OP_STORE);
 	write4_chunk(&c->code_chunk, global);
+}
+
+static void add_local(abl_compiler* c, token name)
+{
+	if (c->current_frame.local_count >= MAX_LOCALS)
+	{
+		error_at(c, "Too many local variables declared in scope.");
+		return;
+	}
+	local* var = &c->current_frame.locals[c->current_frame.local_count++];
+	var->name = name;
+	var->depth = c->current_frame.scope_depth;
+}
+
+static void local_var_decl(abl_compiler* c)
+{
+	if (c->current_frame.scope_depth == 0) 
+		return;
+
+	token const name = c->last;
+	add_local(c, name);
+
+	for (int i = c->current_frame.local_count; i >= 0; i--)
+	{
+		local* l = &c->current_frame.locals[i];
+		if (l->depth != -1 && l->depth < c->current_frame.scope_depth)
+			break;
+
+		if (identifier_equal(c, name, l->name))
+			error_at(c, "variable '%.*s' is already declared in this scope", name.length, &c->lex.src[name.start]);
+	}
 }
 
 static void var_decl(abl_compiler* c)

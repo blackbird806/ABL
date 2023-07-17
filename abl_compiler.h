@@ -4,6 +4,7 @@
 #include "abl_lex.h"
 #include "abl_bytecode.h"
 #include "abl_value.h"
+#include "abl_table.h"
 
 #define MAX_LOCALS 256
 
@@ -24,12 +25,14 @@ typedef struct {
 typedef struct
 {
 	lexer lex;
-	token current;
+	token last;
 	
 	bytecode_chunk constants_chunk;
 	bytecode_chunk code_chunk;
 	abl_value_array constants;
 	frame current_frame;
+
+	abl_table sym_table;
 
 	bool had_error;
 } abl_compiler;

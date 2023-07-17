@@ -44,6 +44,7 @@ static uint32_t read32(abl_vm* vm)
 	return val;
 }
 
+
 // TODO
 static void read_constants(abl_vm* vm, bytecode_chunk* c)
 {
@@ -100,6 +101,18 @@ abl_interpret_result abl_vm_interpret(abl_vm* vm, bytecode_chunk* chunk)
 			abl_value val = make_null();
 			abl_table_get(&vm->global_variables, key, &val);
 			push(vm, val);
+			break;
+		}
+		case OP_STORE_LOCAL:
+		{
+			uint32_t const slot = read32(vm);
+			vm->stack[slot] = vm->stack[0];
+			break;
+		}
+		case OP_LOAD_LOCAL:
+		{
+			uint32_t const slot = read32(vm);
+			push(vm, vm->stack[slot]);
 			break;
 		}
 		case OP_PUSHC:

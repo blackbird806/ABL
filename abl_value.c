@@ -1,6 +1,6 @@
 #include "abl_value.h"
 #include <string.h>
-#include "abl_vm.h"
+#include "abl_table.h"
 
 uint32_t hash_string(const abl_char* str, int size)
 {
@@ -12,14 +12,14 @@ uint32_t hash_string(const abl_char* str, int size)
 	return hash;
 }
 
-abl_string allocate_string(abl_vm* vm, abl_char* chars, int size)
+abl_string* allocate_string(abl_table* table, abl_char* chars, int size)
 {
-	ABL_ASSERT(vm);
+	ABL_ASSERT(table);
 
 	uint32_t const hash = hash_string(chars, size);
-	abl_string* intern = abl_table_find_string(&vm->strings, chars, size, hash);
+	abl_string* intern = abl_table_find_string(table, chars, size, hash);
 	if (intern != NULL)
-		return *intern;
+		return intern;
 
 	abl_string str;
 	str.obj.type = OBJ_STRING;
@@ -29,9 +29,10 @@ abl_string allocate_string(abl_vm* vm, abl_char* chars, int size)
 	str.hash = hash;
 	memcpy(str.data, chars, size * sizeof(abl_char));
 
-	abl_table_set(&vm->strings, &str, make_null());
+	abl_table_set(table, &str, make_null());
 
-	return str;
+	// TODO remove this
+	return abl_table_find_string(table, chars, size, hash);
 }
 
 abl_value make_int(abl_int val)

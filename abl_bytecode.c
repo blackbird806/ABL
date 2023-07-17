@@ -155,6 +155,32 @@ static int store_instruction(bytecode_chunk* chunk, FILE* out, int offset)
 	return offset;
 }
 
+static int load_instruction(bytecode_chunk* chunk, FILE* out, int offset)
+{
+	fprintf(out, "LOAD ");
+	offset++;
+	fprintf(out, "%d\n", *(uint32_t*)&chunk->code[offset]);
+	offset += sizeof(uint32_t);
+	return offset;
+}
+
+static int store_local_instruction(bytecode_chunk* chunk, FILE* out, int offset)
+{
+	fprintf(out, "STORE_LOCAL ");
+	offset++;
+	fprintf(out, "%d\n", *(uint32_t*)&chunk->code[offset]);
+	offset += sizeof(uint32_t);
+	return offset;
+}
+
+static int load_local_instruction(bytecode_chunk* chunk, FILE* out, int offset)
+{
+	fprintf(out, "LOAD_LOCAL ");
+	offset++;
+	fprintf(out, "%d\n", *(uint32_t*)&chunk->code[offset]);
+	offset += sizeof(uint32_t);
+	return offset;
+}
 
 int disassemble_instruction(bytecode_chunk* c, FILE* out, int offset)
 {
@@ -174,21 +200,13 @@ int disassemble_instruction(bytecode_chunk* c, FILE* out, int offset)
 		SIMPLE_INSTRUCTION(POP);
 		case OP_STORE:
 			return store_instruction(c, out, offset);
+		case OP_LOAD:
+			return load_instruction(c, out, offset);
+		case OP_LOAD_LOCAL:
+			return load_local_instruction(c, out, offset);
+		case OP_STORE_LOCAL:
+			return store_local_instruction(c, out, offset);
 		case OP_PUSHC:
 			return constant_instruction(c, out, offset);
 	}
 }
-
-int move_next_instruction(bytecode_chunk* c, int offset)
-{
-	uint8_t const instruction = c->code[offset];
-	switch (instruction)
-	{
-		case OP_PUSHC:
-			return sizeof(uint8_t) + sizeof(uint32_t);
-		default:
-			return sizeof(uint8_t);
-	}
-}
-
-
