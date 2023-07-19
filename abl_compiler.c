@@ -1,7 +1,5 @@
 #include "abl_compiler.h"
-
 #include <stdarg.h>
-
 #include "abl_value.h"
 
 // DEBUG TO REMOVE
@@ -87,6 +85,16 @@ static token advance(abl_compiler* c)
 static token peek(abl_compiler* c, int i)
 {
 	return peek_token(&c->lex, i);
+}
+
+static bool match(abl_compiler* c, token_type t)
+{
+	if (peek(c, 1).type == t)
+	{
+		advance(c);
+		return true;
+	}
+	return false;
 }
 
 static void consume(abl_compiler* c, token_type t)
@@ -214,22 +222,58 @@ static void bool_literal(abl_compiler* c, bool canAssign)
 	emit_constant(c, make_bool(c->last.type == TK_TRUE));
 }
 
+static bool identifier_equal(abl_compiler* c, token a, token b)
+{
+	if (a.length != b.length)
+		return false;
+	return memcmp(&c->lex.src[a.start], &c->lex.src[b.start], a.length) == 0;
+}
+
+static void add_local(abl_compiler* c, token name)
+{
+	if (c->current_frame.local_count >= MAX_LOCALS)
+	{
+		error_at(c, "Too many local variables declared in scope.");
+		return;
+	}
+	local* var = &c->current_frame.locals[c->current_frame.local_count++];
+	var->name = name;
+	var->depth = c->current_frame.scope_depth;
+}
+
+static void declare_variable(abl_compiler* c)
+{
+	if (c->current_frame.scope_depth == 0)
+		return;
+
+	token const name = c->last;
+	for (int i = c->current_frame.local_count - 1; i >= 0; i--)
+	{
+		local* l = &c->current_frame.locals[i];
+		if (l->depth != -1 && l->depth < c->current_frame.scope_depth)
+			break;
+
+		if (identifier_equal(c, name, l->name))
+			error_at(c, "variable '%.*s' is already declared in this scope", name.length, &c->lex.src[name.start]);
+	}
+
+	add_local(c, name);
+}
+
 static uint32_t parse_variable(abl_compiler* c)
 {
-	advance(c);
+	consume(c, TK_IDENTIFIER);
+
+	declare_variable(c);
+	if (c->current_frame.scope_depth > 0)
+		return 0;
+
 	return make_constant(c, make_string(allocate_string(&c->sym_table, &c->lex.src[c->last.start], c->last.length)));
 }
 
 static uint32_t get_variable(abl_compiler* c)
 {
 	return parse_variable(c);
-}
-
-static bool identifier_equal(abl_compiler* c, token a, token b)
-{
-	if (a.length != b.length)
-		return false;
-	return memcmp(&c->lex.src[a.start], &c->lex.src[b.start], a.length) == 0;
 }
 
 static int resolve_local(abl_compiler* c, token name)
@@ -361,11 +405,10 @@ static void block_statement(abl_compiler* c)
 {
 	begin_scope(c);
 	consume(c, TK_OPEN_BRACE);
-	while (peek(c, 1).type != TK_CLOSE_BRACE)
+	while (!match(c, TK_CLOSE_BRACE))
 	{
 		declaration(c);
 	}
-	advance(c); // pass close bracket
 	end_scope(c);
 }
 
@@ -404,42 +447,24 @@ static void statement(abl_compiler* c)
 
 static void var_assignement(abl_compiler* c)
 {
-	uint32_t const global = get_variable(c);
+	uint32_t const arg = resolve_local(c, c->last);
+	uint32_t global = -1; 
+	if (arg == -1)
+		global = get_variable(c);
+
 	consume(c, TK_EQUAL);
 	expression(c);
 	consume(c, TK_SEMICOLON);
-	write_chunk(&c->code_chunk, OP_STORE);
-	write4_chunk(&c->code_chunk, global);
-}
-
-static void add_local(abl_compiler* c, token name)
-{
-	if (c->current_frame.local_count >= MAX_LOCALS)
+	if (c->current_frame.scope_depth == 0)
 	{
-		error_at(c, "Too many local variables declared in scope.");
-		return;
+		ABL_ASSERT(global != -1);
+		write_chunk(&c->code_chunk, OP_STORE);
+		write4_chunk(&c->code_chunk, global);
 	}
-	local* var = &c->current_frame.locals[c->current_frame.local_count++];
-	var->name = name;
-	var->depth = c->current_frame.scope_depth;
-}
-
-static void local_var_decl(abl_compiler* c)
-{
-	if (c->current_frame.scope_depth == 0) 
-		return;
-
-	token const name = c->last;
-	add_local(c, name);
-
-	for (int i = c->current_frame.local_count; i >= 0; i--)
+	else
 	{
-		local* l = &c->current_frame.locals[i];
-		if (l->depth != -1 && l->depth < c->current_frame.scope_depth)
-			break;
-
-		if (identifier_equal(c, name, l->name))
-			error_at(c, "variable '%.*s' is already declared in this scope", name.length, &c->lex.src[name.start]);
+		write_chunk(&c->code_chunk, OP_STORE_LOCAL);
+		write4_chunk(&c->code_chunk, arg);
 	}
 }
 
@@ -447,15 +472,18 @@ static void var_decl(abl_compiler* c)
 {
 	consume(c, TK_VAR);
 	uint32_t const global = parse_variable(c);
-	if (peek_token(&c->lex, 1).type == TK_EQUAL)
+	if (match(c, TK_EQUAL))
 	{
-		consume(c, TK_EQUAL);
 		expression(c);
-		write_chunk(&c->code_chunk, OP_STORE);
+		if (c->current_frame.scope_depth == 0) // global variable
+			write_chunk(&c->code_chunk, OP_STORE);
+		else
+			write_chunk(&c->code_chunk, OP_STORE_LOCAL);
 	}
 	else
 	{
-		write_chunk(&c->code_chunk, OP_VARDECL);
+		if (c->current_frame.scope_depth == 0) // global variable
+			write_chunk(&c->code_chunk, OP_VARDECL);
 	}
 	write4_chunk(&c->code_chunk, global);
 	consume(c, TK_SEMICOLON);

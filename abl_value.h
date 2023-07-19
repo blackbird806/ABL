@@ -50,7 +50,7 @@ abl_value make_null();
 abl_value make_float(abl_float val);
 abl_value make_bool(bool val);
 abl_value make_string(abl_string* val);
-abl_string* allocate_string(abl_table* vm, abl_char* chars, int size);
+abl_string* allocate_string(struct abl_table* vm, abl_char* chars, int size);
 
 typedef struct abl_value_array {
 	int capacity;
