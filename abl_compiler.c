@@ -31,7 +31,7 @@ typedef struct
 
 static parse_rule* get_rule(token_type type);
 
-static void error_at(abl_compiler* c, const char* msg, ...)
+static __forceinline void error_at(abl_compiler* c, const char* msg, ...)
 {
 	ABL_DEBUG_DIAGNOSTIC("[line %d] error ", c->last.line);
 	c->had_error = true;
@@ -278,7 +278,7 @@ static uint32_t get_variable(abl_compiler* c)
 
 static int resolve_local(abl_compiler* c, token name)
 {
-	for (int i = c->current_frame.local_count; i >= 0; i--)
+	for (int i = c->current_frame.local_count-1; i >= 0; i--)
 	{
 		local* l = &c->current_frame.locals[i];
 		if (identifier_equal(c, name, l->name))
@@ -447,7 +447,7 @@ static void statement(abl_compiler* c)
 
 static void var_assignement(abl_compiler* c)
 {
-	uint32_t const arg = resolve_local(c, c->last);
+	int const arg = resolve_local(c, c->last);
 	uint32_t global = -1; 
 	if (arg == -1)
 		global = get_variable(c);
